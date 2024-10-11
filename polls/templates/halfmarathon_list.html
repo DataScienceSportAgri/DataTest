@@ -1,0 +1,25 @@
+{% block content %}
+  <h1>Liste des arrivants</h1>
+  {% if halfmarathons %}
+    <table>
+      <thead>
+        <tr>
+          {% for field in halfmarathons.0._meta.fields %}
+            <th>{{ field.verbose_name|capfirst }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for halfmarathon in halfmarathons %}
+          <tr>
+            {% for field in halfmarathon._meta.fields %}
+              <td>{{ halfmarathon|getattribute:field.name }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Aucun half marathon trouvé.</p>
+  {% endif %}
+{% endblock %}

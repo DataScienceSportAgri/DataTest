@@ -24,4 +24,5 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('polls/', include('polls.urls')),
     path('admin/', admin.site.urls),
+    path('halfmarathon/', views.halfmarathon_list, name='halfmarathon_list'),
 ]
