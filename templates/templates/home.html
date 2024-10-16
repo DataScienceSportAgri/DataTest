@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Bienvenue sur mon projet personnel</h1>
+  <p>Ceci est la page d'accueil.</p>
+
+  <a href="/polls" class="btn btn-primary">Accéder aux sondages</a>
+    <br><br>
+    <a href="{% url 'halfmarathon_list' %}">Voir la liste des arrivants du semi-marathon du bois de vincennes 2023</a>
+{% endblock %}
