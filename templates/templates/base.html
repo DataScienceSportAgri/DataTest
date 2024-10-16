@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mon Site Django{% endblock %}</title>
+</head>
+<body>
+    <header>
+        Science de la donnée
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        Créé par DataScienceSportAgri
+    </footer>
+</body>
+</html>

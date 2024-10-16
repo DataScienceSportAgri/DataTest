@@ -5,4 +5,4 @@ def home(request):
 
 def halfmarathon_list(request):
     halfmarathons = HalfMarathon.objects.all()
-    return render(request, 'halfmarathon_list.html', {'halfmarathons': halfmarathons})
+    return render(request, 'templates/halfmarathon_list.html', {'halfmarathons': halfmarathons})
