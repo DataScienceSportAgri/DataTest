@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Liste des courses</h1>
-    {% if course_list %}
+    {% if CourseList %}
         <table>
             <thead>
                 <tr>
@@ -12,7 +12,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for course in course_list %}
+                {% for course in CourseList %}
                     <tr>
                         <td>{{ course.id }}</td>
                         <td>{{ course.Nom }}</td>

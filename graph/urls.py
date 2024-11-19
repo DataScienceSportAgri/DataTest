@@ -4,5 +4,5 @@ from . import views
 
 app_name = 'graph'
 urlpatterns = [
-    path('', views.finishers_list.as_view(), name='index'),
+    path('', views.CourseList.as_view(), name='index'),
     ]
