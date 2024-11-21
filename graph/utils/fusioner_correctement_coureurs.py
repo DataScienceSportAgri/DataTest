@@ -201,12 +201,12 @@ def fusionner_et_defusionner_coureurs():
 
 
 
-                        if i % print_frequency == 0 or random.random() < 0.05:
-                            print(f"  Fusion effectuée dans le sous-groupe {j + 1}:")
-                            print(f"    Coureur principal : {coureur_principal.prenom} {coureur_principal.nom}")
-                            print(f"    Nombre de coureurs fusionnés : {len(sous_groupe) - 1}")
-                        if len(sous_groupe)>2:
-                            print(f"    Nombre de coureurs fusionnés : {len(sous_groupe) - 1}")
+                            if i % print_frequency == 0 or random.random() < 0.05:
+                                print(f"  Fusion effectuée dans le sous-groupe {j + 1}:")
+                                print(f"    Coureur principal : {coureur_principal.prenom} {coureur_principal.nom}")
+                                print(f"    Nombre de coureurs fusionnés : {len(sous_groupe) - 1}")
+                            if len(sous_groupe)>2:
+                                print(f"    Nombre de coureurs fusionnés : {len(sous_groupe) - 1}")
             print(f'defusion totale = {defusion}, fusion totale  = {fusion}.')
             processed += len(lot_groupes)
             print(f"Processus de fusion et défusion des coureurs terminé groupe {processed} sur {total_groupes}.")
