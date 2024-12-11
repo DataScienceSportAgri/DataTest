@@ -1,12 +1,9 @@
 import os
 from tqdm import tqdm
-from django.db import migrations, transaction
-from django.apps import apps
-from graph.Nom_Prenoms import separer_noms_prenoms
+from django.db import transaction
+from graph.migrationprocess.Nom_Prenoms import separer_noms_prenoms
 import pandas as pd
-from graph.models import Course, ResultatCourse, Categorie, Coureur, CoureurCategorie
 import re
-from datetime import datetime, timedelta
 
 from datetime import timedelta
 
