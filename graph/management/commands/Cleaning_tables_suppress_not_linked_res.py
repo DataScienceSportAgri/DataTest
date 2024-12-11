@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db.models import Count
-from ...models import ResultatCourse, Course
+from graph.models import ResultatCourse, Course
 
 
 class Command(BaseCommand):

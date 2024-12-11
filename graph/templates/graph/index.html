@@ -2,6 +2,7 @@
 
 {% block content %}
     <h1>Liste des courses</h1>
+     <a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
     {% if nom_list %}
         <table>
             <thead>
@@ -9,6 +10,7 @@
                     {% for field_name in field_names %}
                         <th>{{ field_name|capfirst }}</th>
                     {% endfor %}
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -18,31 +20,33 @@
                         <td>{{ course.nom }}</td>
                         <td>{{ course.annee }}</td>
                         <td>{{ course.distance }}</td>
+                        <td>
+                            <a href="{% url 'graph:resultats_course' course.id %}" class="btn btn-primary">Voir les résultats</a>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>Aucune course n'est disponible.</p>
-    {% endif %}
-
-    {% if is_paginated %}
+        {% if is_paginated %}
         <div class="pagination">
             <span class="step-links">
                 {% if page_obj.has_previous %}
-                    <a href="?page=1">&laquo; first</a>
-                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                    <a href="?page=1">&laquo; première</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">précédente</a>
                 {% endif %}
 
                 <span class="current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}.
                 </span>
 
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}">next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                    <a href="?page={{ page_obj.next_page_number }}">suivante</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">dernière &raquo;</a>
                 {% endif %}
             </span>
         </div>
+        {% endif %}
+    {% else %}
+        <p>Aucune course n'est disponible.</p>
     {% endif %}
 {% endblock %}

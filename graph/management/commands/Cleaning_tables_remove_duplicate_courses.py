@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db.models import Count
-from ...models import Course, ResultatCourse
+from graph.models import Course, ResultatCourse
 
 class Command(BaseCommand):
     help = 'Supprime les courses en double et les résultats orphelins'

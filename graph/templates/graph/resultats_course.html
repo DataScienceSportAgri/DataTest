@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Résultats de la course : {{ course.nom }} ({{ course.annee }})</h1>
+    {% if resultats_list %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Coureur</th>
+                    <th>Temps</th>
+                    <th>Temps2</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resultat in resultats_list %}
+                    <tr>
+                        <td>{{ resultat.position }}</td>
+                        <td>{{ resultat.coureur }}</td>
+                        <td>{{ resultat.temps }}</td>
+                        <td>{{ resultat.temps2 }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucun résultat n'est disponible pour cette course.</p>
+    {% endif %}
+    <a href="{% url 'graph:index' %}" class="btn btn-secondary">Retour à la liste des courses</a>
+{% endblock %}

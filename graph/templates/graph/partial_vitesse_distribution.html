@@ -1,0 +1,9 @@
+{% load static %}
+<div id="chart-container" style="width: 98%; height: 500px;">
+    {{ plot|safe }}
+</div>
+<div id="progress-info">
+    Résultats traités : <span id="loaded-count">{{ loaded_count }}</span> / <span id="total-count">{{ total_count }}</span>
+</div>
+    <div id="countdown">Chargement du compte à rebours...</div>
+  <script src="{% static 'js/chart_update.js' %}"></script>

@@ -1,12 +1,13 @@
 from django.db import transaction
-from django.db.models import F, Q, Count, Max
+from django.db.models import F, Q, Count
 from django.db.models.functions import Substr, Length
 from collections import defaultdict
-from ..models import Coureur, CoureurCategorie, ResultatCourse
+from graph.models import Coureur, CoureurCategorie, ResultatCourse
 import re
 from tqdm import tqdm
-from .test_fusion_coureurs import separer_coureurs_par_categorie
+from graph.utils.fusionner_coureurs.GroupementCoureurIdentique import separer_coureurs_par_categorie
 import random
+import pandas as pd
 
 transaction.set_autocommit(True)
 def get_dernier_suffixe(coureurs_groupe):
@@ -17,6 +18,8 @@ def get_dernier_suffixe(coureurs_groupe):
             suffixes.append(int(match.group()))
 
     return max(suffixes) if suffixes else 0
+
+
 
 def fusionner_et_defusionner_coureurs():
     fusion = 0
@@ -50,6 +53,7 @@ def fusionner_et_defusionner_coureurs():
         batch_size = int(round(total_groupes/number_of_itteration))
         processed = 1981
         print_frequency = max(1, total_groupes // 20)  # Afficher environ 20 fois au total
+
     while processed < total_groupes:
         with transaction.atomic():
             # Traiter un lot de groupes
