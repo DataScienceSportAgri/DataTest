@@ -151,7 +151,7 @@ def fusion():
     optimizer = Optimizer()
     while processed < total_groupes:
 
-        with transaction.atomic():
+
             print('processed',processed)
             # Traiter un lot de groupes
             lot_groupes = groupes[processed:processed + batch_size]
@@ -270,43 +270,48 @@ def fusion():
                             duplicates = df[~df['id'].isin(unique_df['id'])]
 
                             nb_ligne_coureur_categ_suppr += len(duplicates)
-                            # Au lieu de supprimer et recréer, utilisez update_or_create
-                            for _, row in unique_df.iterrows():
-                                CoureurCategorie.objects.update_or_create(
-                                    id=row['id'],
-                                    defaults={
-                                        'coureur_id': row['coureur_id'],
-                                        'categorie_id': row['categorie_id'],
-                                        'annee': row['annee']
-                                    }
-                                )
-                                nb_ligne_coureurcateg += 1
-                            ids_to_delete = duplicates['id'].tolist()
-                            CoureurCategorie.objects.filter(id__in=ids_to_delete).delete()
+                            ids_to_delete = df['id'].tolist()
+                            with transaction.atomic():
 
-                            for coureur_id in ids_valides[1:]:
-                                if coureur_id != coureur_principal_id:
-                                    # Mettre à jour les résultats de course
-                                    ResultatCourse.objects.filter(coureur_id=coureur_id).update(
-                                        coureur_id=coureur_principal_id)
-                                    # Supprimer le coureur fusionné
-                                    Coureur.objects.filter(id=coureur_id).delete()
-                                    fusion += 1
+                                CoureurCategorie.objects.filter(id__in=ids_to_delete).delete()
+                            with transaction.atomic():
+                                # Au lieu de supprimer et recréer, utilisez update_or_create
+                                for _, row in unique_df.iterrows():
+                                    CoureurCategorie.objects.update_or_create(
+                                        id=row['id'],
+                                        defaults={
+                                            'coureur_id': coureur_principal_id,
+                                            'categorie_id': row['categorie_id'],
+                                            'annee': row['annee']
+                                        }
+                                    )
+                                    nb_ligne_coureurcateg += 1
 
-                            # récupérer la liste des distances de tout les coureurs
-                            #calculer un écart-type pondéré par la division par la moyenne.
-                            #utiliser cet écart-type pondéré pour ajouter au score de viabilité, plus l'écart type est grand
-                            #plus le score de viabilité diminue
-                            #ajouter le score de viabilité au coureur principal dans la colonne 'coureur principal' sur sql.
-                            # Calculer l'écart-type pondéré
-                            trust_categ_change_part_score = best_dict_remake[new_keys[a]]
-                            normalized_std = calculate_std_divided_by_mean(distances_de_course)
-                            trust_distance_part = log_scale(normalized_std)
-                            trustability_score = trust_name_part + trust_distance_part + trust_generative_part + trust_categ_change_part_score
-                            # Mettre à jour le score de viabilité du coureur principal
-                            coureur_principal = Coureur.objects.get(id=coureur_principal_id)
-                            coureur_principal.score_de_viabilite = trustability_score
-                            coureur_principal.save()
+
+
+                                for coureur_id in ids_valides[1:]:
+                                    if coureur_id != coureur_principal_id:
+                                        # Mettre à jour les résultats de course
+                                        ResultatCourse.objects.filter(coureur_id=coureur_id).update(
+                                            coureur_id=coureur_principal_id)
+                                        # Supprimer le coureur fusionné
+                                        Coureur.objects.filter(id=coureur_id).delete()
+                                        fusion += 1
+
+                                # récupérer la liste des distances de tout les coureurs
+                                #calculer un écart-type pondéré par la division par la moyenne.
+                                #utiliser cet écart-type pondéré pour ajouter au score de viabilité, plus l'écart type est grand
+                                #plus le score de viabilité diminue
+                                #ajouter le score de viabilité au coureur principal dans la colonne 'coureur principal' sur sql.
+                                # Calculer l'écart-type pondéré
+                                trust_categ_change_part_score = best_dict_remake[new_keys[a]]
+                                normalized_std = calculate_std_divided_by_mean(distances_de_course)
+                                trust_distance_part = log_scale(normalized_std)
+                                trustability_score = trust_name_part + trust_distance_part + trust_generative_part + trust_categ_change_part_score
+                                # Mettre à jour le score de viabilité du coureur principal
+                                coureur_principal = Coureur.objects.get(id=coureur_principal_id)
+                                coureur_principal.score_de_viabilite = trustability_score
+                                coureur_principal.save()
                             a+=1
 
 

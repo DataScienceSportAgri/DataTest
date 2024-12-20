@@ -58,10 +58,10 @@ def separer_coureurs_par_categorie(coureurs_par_categories, optimizer):
     trust_generative_part = 0.1
     cat_artificielle = {
         'CAM': ['A'], 'CAF': ['A'], 'JUM': ['B'], 'JUF': ['B'], 'ESM': ['C'], 'ESF': ['C'],
-        'SEM': ['D'], 'SEF': ['D'], 'M0M': ['D'], 'M0F': ['D'], 'M1M': ['E'], 'M1F': ['E'],
-        'M2M': ['F'], 'M2F': ['F'], 'M3M': ['G'], 'M3F': ['G'], 'M4M': ['H'], 'M4F': ['H'],
-        'M5M': ['I'], 'M5F': ['I'], 'M6M': ['J'], 'M6F': ['J'], 'M7M': ['K'], 'M7F': ['K'],
-        'M8M': ['L'], 'M8F': ['L'], 'M9M': ['M'], 'M9F': ['M'], 'M10M': ['N'], 'M10F': ['N'],
+        'SEM': ['D'], 'SEF': ['D'], 'M0M': ['E'], 'M0F': ['E'], 'M1M': ['F'], 'M1F': ['F'],
+        'M2M': ['G'], 'M2F': ['G'], 'M3M': ['H'], 'M3F': ['H'], 'M4M': ['I'], 'M4F': ['I'],
+        'M5M': ['J'], 'M5F': ['J'], 'M6M': ['K'], 'M6F': ['K'], 'M7M': ['L'], 'M7F': ['L'],
+        'M8M': ['M'], 'M8F': ['M'], 'M9M': ['N'], 'M9F': ['N'], 'M10M': ['O'], 'M10F': ['O'],
         'V1M': ['E', 'F'], 'V1F': ['E', 'F'], 'V2M': ['G', 'H'], 'V2F': ['G', 'H'], 'V3M': ['I', 'J'],
         'V3F': ['I', 'J'],
         'V4M': ['K', 'L'], 'V4F': ['K', 'L'], 'V5M': ['M', 'N'], 'V5F': ['M', 'N']
@@ -73,7 +73,7 @@ def separer_coureurs_par_categorie(coureurs_par_categories, optimizer):
         return df_filtre
     def ordre_categorie(categorie, typ='ordre'):
         ordre = {
-            'A':1,'B':2,'C':3,'D':4,'E':5,'F':6,'G':7,'H':8,'I':9,'J':10,'K':11,'L':12,'M':13,'N':14
+            'A':1,'B':2,'C':3,'D':4,'E':5,'F':6,'G':7,'H':8,'I':9,'J':10,'K':11,'L':12,'M':13,'N':14,'O':15
             }
         if categorie not in cat_artificielle:
             return None
@@ -95,6 +95,17 @@ def separer_coureurs_par_categorie(coureurs_par_categories, optimizer):
         ordres = [ordre_categorie(cat, typ='check') for cat in (cat1, cat2, cat3)]
         min_ordres = [min(o) for o in ordres]
         progression_logique_base = False
+        if min_ordres[0] == min_ordres[1] and min_ordres[0] == min_ordres[2] and 3 >= min_ordres[0] >= 0:
+            if annee_ecart <= 3:
+                score_categ_change += 1
+                return True, score_categ_change
+        if min_ordres[0] == min_ordres[1] and min_ordres[0] == min_ordres[2] and min_ordres[0] == 4:
+            score_categ_change += 0.25
+            return True, score_categ_change
+        if min_ordres[0] == min_ordres[1] and min_ordres[0] == min_ordres[2] and min_ordres[0] >= 5:
+            if annee_ecart <= 7:
+                score_categ_change += 0.6
+                return True, score_categ_change
         #saut logique
         for o1 in ordres[0]:
             for o2 in ordres[1]:
