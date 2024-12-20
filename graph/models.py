@@ -21,13 +21,19 @@ class Coureur(models.Model):
     def __str__(self):
         return f"{self.prenom} {self.nom}"
 
+class CourseType(models.Model):
+    nom = models.CharField(max_length=255)
+
 class Course(models.Model):
     nom = models.CharField(max_length=255)
     annee = models.IntegerField()
     distance = models.FloatField()
+    type = models.ForeignKey(CourseType, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.nom} ({self.annee})"
+
+
 
 class ResultatCourse(models.Model):
     coureur = models.ForeignKey(Coureur, on_delete=models.CASCADE)
