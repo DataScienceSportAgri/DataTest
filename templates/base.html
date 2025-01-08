@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Mon Site Django{% endblock %}</title>
+    <title>{% block title %}Portfolio DataScientist{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    {% block home_css %}{% endblock %}
+
 </head>
+
 <body>
     <header>
         Science de la donnée
@@ -18,5 +23,6 @@
     <footer>
         Créé par DataScienceSportAgri
     </footer>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
