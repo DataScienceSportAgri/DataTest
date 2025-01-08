@@ -1,33 +1,29 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block content %}
-    <h1>Liste des courses</h1>
-     <a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
-    {% if nom_list %}
-        <table>
-            <thead>
-                <tr>
-                    {% for field_name in field_names %}
-                        <th>{{ field_name|capfirst }}</th>
-                    {% endfor %}
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for course in nom_list %}
-                    <tr>
-                        <td>{{ course.id }}</td>
-                        <td>{{ course.nom }}</td>
-                        <td>{{ course.annee }}</td>
-                        <td>{{ course.distance }}</td>
-                        <td>
-                            <a href="{% url 'graph:resultats_course' course.id %}" class="btn btn-primary">Voir les résultats</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if is_paginated %}
+<h1>Liste des courses</h1>
+<a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% if nom_list %}
+    <div class="course-list">
+        <div class="course-row course-header">
+            <div class="course-cell">Nom</div>
+            <div class="course-cell">Année</div>
+            <div class="course-cell">Distance</div>
+            <div class="course-cell">Type</div>
+        </div>
+        {% for course in nom_list %}
+            <a href="{% url 'graph:resultats_course' course.id %}" class="course-row course-item">
+                <div class="course-cell">{{ course.nom_marsien }}</div>
+                <div class="course-cell">{{ course.annee }}</div>
+                <div class="course-cell">{{ course.distance }}</div>
+                <div class="course-cell">{{ course.type.nom }}</div>
+            </a>
+        {% endfor %}
+    </div>
+    {% if is_paginated %}
         <div class="pagination">
             <span class="step-links">
                 {% if page_obj.has_previous %}
@@ -45,8 +41,8 @@
                 {% endif %}
             </span>
         </div>
-        {% endif %}
-    {% else %}
-        <p>Aucune course n'est disponible.</p>
     {% endif %}
+{% else %}
+    <p>Aucune course n'est disponible.</p>
+{% endif %}
 {% endblock %}

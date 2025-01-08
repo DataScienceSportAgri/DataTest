@@ -11,6 +11,12 @@ import pandas as pd
 import plotly.graph_objs as go
 from random import sample
 from django.template.loader import render_to_string
+from django.views import generic
+from django.db.models import F, ExpressionWrapper, FloatField
+from django.db.models.functions import Cast
+from django.views.generic import DetailView
+from django.db.models import Prefetch
+
 class CourseList(generic.ListView):
     template_name = 'graph/index.html'
     context_object_name = 'nom_list'
@@ -18,13 +24,14 @@ class CourseList(generic.ListView):
 
     def get_queryset(self):
         """Return all finishers, ordered by their finish time."""
-        return Course.objects.all().order_by('nom').distinct()
+        return Course.objects.all().order_by('nom_marsien').distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.object_list:
-            context['field_names'] = [field.verbose_name for field in self.object_list[0]._meta.fields]
+            context['field_names'] = ['Nom', 'Année', 'Distance', 'Type']
         return context
+
 
 class ResultatsCourseView(generic.ListView):
     template_name = 'graph/resultats_course.html'
@@ -33,7 +40,18 @@ class ResultatsCourseView(generic.ListView):
 
     def get_queryset(self):
         course_id = self.kwargs['pk']
-        return ResultatCourse.objects.filter(course_id=course_id).order_by('position')
+        return ResultatCourse.objects.filter(course_id=course_id).annotate(
+            total_seconds=ExpressionWrapper(Cast(F('temps'), FloatField()) / 1000000.0, output_field=FloatField()),
+            total_seconds2=ExpressionWrapper(Cast(F('temps2'), FloatField()) / 1000000.0, output_field=FloatField()),
+            vitesse=ExpressionWrapper(
+                (F('course__distance') / (F('total_seconds') + 0.000001))*3.6,  # Ajout d'une petite valeur pour éviter la division par zéro
+                output_field=FloatField()
+            ),
+            vitesse2=ExpressionWrapper(
+                (F('course__distance') / (F('total_seconds2') + 0.000001))*3.6,  # Ajout d'une petite valeur pour éviter la division par zéro
+                output_field=FloatField()
+            )
+        ).order_by('position')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -41,6 +59,35 @@ class ResultatsCourseView(generic.ListView):
         return context
 
 
+class CoureurDetailView(DetailView):
+    model = Coureur
+    template_name = 'graph/coureur_detail.html'
+    context_object_name = 'coureur'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        coureur = self.object
+
+        # Récupérer tous les résultats de course pour ce coureur, avec les informations de course préchargées
+        resultats = ResultatCourse.objects.filter(coureur=coureur).select_related('course').order_by('-course__annee', 'course__nom_marsien')
+
+        # Récupérer toutes les catégories du coureur, groupées par année
+        categories = CoureurCategorie.objects.filter(coureur=coureur).select_related('categorie').order_by('-annee')
+
+        # Créer un dictionnaire des catégories par année
+        categories_par_annee = {}
+        for cat in categories:
+            if cat.annee not in categories_par_annee:
+                categories_par_annee[cat.annee] = []
+            categories_par_annee[cat.annee].append(cat.categorie)
+
+        # Ajouter les catégories à chaque résultat de course
+        for resultat in resultats:
+            resultat.categories = categories_par_annee.get(resultat.course.annee, [])
+
+        context['resultats'] = resultats
+        context['categories_par_annee'] = categories_par_annee
+        return context
 class VitesseDistributionView(TemplateView):
     template_name = 'graph/vitesse_distribution.html'
 

@@ -16,6 +16,8 @@ class Categorie(models.Model):
 class Coureur(models.Model):
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
+    nom_marsien = models.CharField(max_length=100, null=True, blank=True)
+    prenom_marsien = models.CharField(max_length=100, null=True, blank=True)
     score_de_viabilite = models.FloatField(null=True, blank=True)
     
     def __str__(self):
@@ -26,6 +28,7 @@ class CourseType(models.Model):
 
 class Course(models.Model):
     nom = models.CharField(max_length=255)
+    nom_marsien = models.CharField(max_length=255, null=True, blank=True)
     annee = models.IntegerField()
     distance = models.FloatField()
     type = models.ForeignKey(CourseType, on_delete=models.CASCADE, null=True, blank=True)
@@ -78,3 +81,32 @@ class CoureurCategorie(models.Model):
     def __str__(self):
         return f"{self.coureur} - {self.categorie} ({self.annee})"
 
+
+class FrenchSyllable(models.Model):
+    content = models.CharField(max_length=20, unique=True)
+    count = models.IntegerField(default=0)
+    cv_pattern = models.CharField(max_length=10, blank=True)
+
+    def __str__(self):
+        return f"{self.content} ({self.count})"
+
+class MarsianSyllable(models.Model):
+    content = models.CharField(max_length=20, unique=True)
+    cv_pattern = models.CharField(max_length=10, blank=True)
+
+    def __str__(self):
+        return self.content
+
+class SyllablePair(models.Model):
+    french_syllable1 = models.ForeignKey(FrenchSyllable, on_delete=models.CASCADE, related_name='first_french_syllable')
+    french_syllable2 = models.ForeignKey(FrenchSyllable, on_delete=models.CASCADE, related_name='second_french_syllable', null=True, blank=True)
+    marsian_syllable1 = models.ForeignKey(MarsianSyllable, on_delete=models.CASCADE, related_name='first_marsian_syllable')
+    marsian_syllable2 = models.ForeignKey(MarsianSyllable, on_delete=models.CASCADE, related_name='second_marsian_syllable', null=True, blank=True)
+
+    class Meta:
+        unique_together = ('french_syllable1', 'french_syllable2')
+
+    def __str__(self):
+        if self.french_syllable2:
+            return f"{self.french_syllable1}-{self.french_syllable2} -> {self.marsian_syllable1}-{self.marsian_syllable2}"
+        return f"{self.french_syllable1} -> {self.marsian_syllable1}"
