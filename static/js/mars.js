@@ -46,6 +46,9 @@ loader.load('/static/models/mars.glb', function(gltf) {
         // Rotation plus fluide
         model.rotation.y -= 0.002;
 
+        model.rotation.x -= 0.0001;
+        model.rotation.z -= -0.00015;
+
 
         // Ajout d'un effet de pénombre
         renderer.shadowMap.enabled = true;
