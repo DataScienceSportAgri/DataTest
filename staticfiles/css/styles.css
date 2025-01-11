@@ -1,0 +1,134 @@
+.course-list {
+    width: 100%;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+}
+
+.course-row {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+
+.course-row:last-child {
+    border-bottom: none;
+}
+
+.course-cell {
+    flex: 1;
+    padding: 10px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.course-cell:first-child {
+    flex: 2;
+}
+
+.course-header {
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
+
+.course-item:hover {
+    background-color: #e0e0e0;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.orange-row {
+    background-color: rgba(255, 165, 0, 0.2);
+}
+
+.orange-row:hover {
+    background-color: rgba(255, 165, 0, 0.4);
+}
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination .step-links a {
+    color: #007bff;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background-color .3s;
+    border: 1px solid #ddd;
+    margin: 0 4px;
+}
+
+.pagination .step-links a:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.pagination .current {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
+    border: 1px solid #007bff;
+}
+
+#chart-container, #statistics-container, #progress-info, #countdown {
+    margin-bottom: 20px;
+}
+
+#statistics-container {
+    width: 98%;
+    margin: 0 auto;
+}
+
+.stats-flex-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: nowrap; /* Ajoutez cette ligne */
+}
+
+.stats-section {
+    flex: 1;
+    min-width: 300px; /* Ajoutez cette ligne */
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+
+.stats-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-section td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.stats-section td:first-child {
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .stats-flex-container {
+        flex-direction: column;
+    }
+}
+
+
