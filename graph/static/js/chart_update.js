@@ -72,6 +72,14 @@ function fetchUpdates() {
         if (data.is_update) {
             document.getElementById('loaded-count').textContent = data.loaded_count;
             document.getElementById('total-count').textContent = data.total_count;
+                                        // Mise à jour des statistiques
+            if (data.stats) {
+                updateStatistics(data.stats);
+            }
+                            // Générer les divs de statistiques pour les catégories sélectionnées
+            if (data.stats && data.categories) {
+                generateStatsDivs(data.categories, data.stats);
+            }
             window.chartConfig.loadedCount = data.loaded_count;
             window.chartConfig.totalCount = data.total_count;
         } else {
