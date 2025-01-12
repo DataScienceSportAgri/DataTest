@@ -46,23 +46,24 @@ console.log('window.chartConfig initialized');
     <input type="checkbox" name="course-type" value="Trail"> Trail
   </label>
     </div>
-    <div id="select_categorie" class="majorone">
-<div id="all_categorie" class="category-container" data-categories="{{ categories_json|safe }}">
-    <!-- Les catégories seront ajoutées ici dynamiquement -->
-</div>
-<div id="categorie_selected" class="group-of-category-container">
-    <div id="bouton+" class="control-button">
-        <button>Ajouter une série</button>
+<div id="select_categorie" class="majorone">
+    <div id="all_categorie" class="category-container" data-categories="{{ categories_json|safe }}">
     </div>
-    <div id="bouton-" class="control-button">
-        <button>Supprimer une série</button>
-    </div>
-    <div id="categorie_selected_uniques_series" class="category-container">
+    <div id="categorie_selected" class="group-of-category-container">
+        <div id="buttonsdiv" class="buttondiv">
+            <div id="bouton+" class="control-button">
+                <button>Ajouter une série</button>
+            </div>
+            <div id="bouton-" class="control-button">
+                <button>Supprimer une série</button>
+            </div>
+        </div>
+        <div id="series_container" class="series-wrapper">
+            <!-- Les séries seront ajoutées ici -->
+        </div>
     </div>
 </div>
 
-</div>
-    </div>
         <script src="{% static 'js/dragAndDrop.js' %}"></script>
         <script src="{% static 'js/createDeleteSeries.js' %}"></script>
 <script>

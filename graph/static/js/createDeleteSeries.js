@@ -1,58 +1,69 @@
 document.addEventListener('DOMContentLoaded', function() {
     const addButton = document.querySelector('#bouton\\+');
     const removeButton = document.querySelector('#bouton\\-');
-    const container = document.querySelector('#categorie_selected');
+    const container = document.querySelector('#series_container');
     let seriesCount = 0;
 
     const rawData = document.getElementById('categories').textContent;
     const categoriesData = JSON.parse(JSON.parse(rawData));
 
-    // Style pour le conteneur principal
     container.style.display = 'flex';
-    container.style.flexDirection = 'column';
+    container.style.flexDirection = 'row';
+    container.style.flexWrap = 'wrap';
     container.style.gap = '10px';
 
-    // Créer les trois divisions initiales
     createInitialSeries();
 
     function createInitialSeries() {
-
         createSeriesWithTitle('F');
-        // Série pour hommes
         createSeriesWithTitle('M');
     }
-
-    function createSeriesWithTitle(title) {
-        const newSeriesDiv = document.createElement('div');
-        newSeriesDiv.className = 'category-container';
-        newSeriesDiv.id = `categorie_selected_${title}`;
-
-        newSeriesDiv.style.width = '100%';
-        newSeriesDiv.style.padding = '10px';
-        newSeriesDiv.style.backgroundColor = '#f0f0f0';
-        newSeriesDiv.style.borderRadius = '5px';
-        newSeriesDiv.style.marginBottom = '10px';
-
-        const seriesTitle = document.createElement('h4');
-        seriesTitle.textContent = title;
-        newSeriesDiv.appendChild(seriesTitle);
-
-        container.appendChild(newSeriesDiv);
+    function dragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.textContent);
     }
 
+function createSeriesWithTitle(title) {
+    seriesCount++;
+    const newSeriesDiv = document.createElement('div');
+    newSeriesDiv.className = 'category-container';
+    newSeriesDiv.id = `categorie_selected_uniques_series_${seriesCount}`;
 
-    // Fonction pour supprimer la dernière série
-    function removeLastSeries() {
-        if (seriesCount > 0) {
-            const lastSeries = document.querySelector(`#categorie_selected_uniques_series_${seriesCount}`);
-            if (lastSeries) {
-                lastSeries.remove();
-                seriesCount--;
-            }
+        // Ajoutez ces styles
+    newSeriesDiv.style.width = '550px'; // Ajustez selon vos besoins
+    newSeriesDiv.style.flexShrink = '0';
+    newSeriesDiv.style.marginBottom = '10px';
+
+    const seriesTitle = document.createElement('h4');
+    seriesTitle.textContent = title || `Série ${seriesCount}`;
+    newSeriesDiv.appendChild(seriesTitle);
+
+    // Ajouter les catégories correspondantes
+    for (const category of categoriesData) {
+        if (category.sexe === title) {
+            const box = document.createElement('div');
+            box.className = 'category-box';
+            box.draggable = true;
+            box.textContent = category.nom;
+            box.dataset.sexe = category.sexe;
+            newSeriesDiv.appendChild(box);
+
+            box.addEventListener('dragstart', dragStart);
         }
     }
 
-    // Ajout des écouteurs d'événements
-    addButton.addEventListener('click', createNewSeries);
+    container.appendChild(newSeriesDiv);
+}
+function removeLastSeries() {
+    if (seriesCount > 2) {  // Ne supprime pas les séries F et M
+        const lastSeries = document.querySelector(`#categorie_selected_uniques_series_${seriesCount}`);
+        if (lastSeries) {
+            lastSeries.remove();
+            seriesCount--;
+        }
+    }
+}
+
+
+    addButton.addEventListener('click', () => createSeriesWithTitle());
     removeButton.addEventListener('click', removeLastSeries);
 });
