@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% load static %}
 {% block content %}
 <h1>Distribution des vitesses</h1>
@@ -11,7 +12,7 @@
     {{ type_list|default:"['Course sur route', 'Foulee']"|json_script:"type_list" }}
     {{ stats|default:"[]"|json_script:"stats" }}
         {{ categories|default:"['F','M']"|json_script:"categories" }}
-            {{ seriescategories|default:"['F','M']"|json_script:"series_categories" }}
+            {{ series_categories|json_script:"series_categories" }}
     {{ is_update|default:False|json_script:"is_update" }}
 <div style="display: none;">
     <span id="refresh_interval">{{ refresh_interval|default:"25000" }}</span>
@@ -21,11 +22,11 @@
     <span id="max_distance">{{ max_distance|default:"10000"}}</span>
     <span id="type_list">{{ type_list|default:"['Course sur route', 'Foulee']"|safe}}</span>
         <span id="categories">{{ type_list|default:"['F', 'M']"|safe}}</span>
+            <span id="series_categories">{{ type_list|safe}}</span>
     <span id="stats">{{ stats|default:"[]"|safe}}</span>
 </div>
 <script>
 window.isRefreshing = false;
-console.log('window.chartConfig initialized');
 </script>
     <script src="{% static 'js/chartConfig.js' %}"></script>
 
@@ -99,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="{% static 'plotly.js-dist/plotly.js' %}"></script>
       <script src="{% static 'js/updateCountdown.js' %}"></script>
         <script src="{% static 'js/updateStats.js' %}"></script>
-    <script src="{% static 'js/dynamicStat.js' %}"></script>
+
 <div class="range-container" style="width: 50%; margin: 20px auto;">
   <link rel="stylesheet" href="{% static 'css/nouislider.min.css' %}">
   <script src="{% static 'js/nouislider.min.js' %}"></script>
@@ -150,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 const observer = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
-    console.log("Changement détecté :", mutation);
   });
 });
 

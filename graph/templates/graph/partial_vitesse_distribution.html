@@ -2,35 +2,10 @@
 <div id="chart-container" style="width: 98%; height: 500px;">
     {{ plot|safe }}
 </div>
+<script>console.log("Chart Config Stats:", JSON.stringify(window.chartConfig.stats, null, 2))</script>
 <div id="statistics-container">
     <h3>Statistiques</h3>
         <div id="dynamic-stats-container"></div>
-    <div class="stats-flex-container">
-        <div class="stats-section">
-            <h4>Vitesses</h4>
-            <table>
-            <tr><td>Moyenne :</td><td>{{ stats.vitesses.moyenne|floatformat:2 }} km/h</td></tr>
-            <tr><td>Écart-type :</td><td>{{ stats.vitesses.ecart_type|floatformat:2 }} km/h</td></tr>
-            <tr><td>Variance :</td><td>{{ stats.vitesses.variance|floatformat:2 }} (km/h)²</td></tr>
-            <tr><td>% Variance :</td><td>{{ stats.vitesses.pourcentage_variance|floatformat:2 }}%</td></tr>
-            <tr><td>% Écart-type :</td><td>{{ stats.vitesses.pourcentage_ecart_type|floatformat:2 }}%</td></tr>
-            <tr><td>Skewness :</td><td>{{ stats.vitesses.skewness|floatformat:3 }}</td></tr>
-            <tr><td>Kurtosis :</td><td>{{ stats.vitesses.kurtosis|floatformat:3 }}</td></tr>
-        </table>
-        </div>
-        <div class="stats-section">
-            <h4>Distances</h4>
-            <table>
-            <tr><td>Moyenne :</td><td>{{ stats.distances.moyenne|floatformat:2 }} m</td></tr>
-            <tr><td>Écart-type :</td><td>{{ stats.distances.ecart_type|floatformat:2 }} m</td></tr>
-            <tr><td>Variance :</td><td>{{ stats.distances.variance|floatformat:2 }} m²</td></tr>
-            <tr><td>% Variance :</td><td>{{ stats.distances.pourcentage_variance|floatformat:2 }}%</td></tr>
-            <tr><td>% Écart-type :</td><td>{{ stats.distances.pourcentage_ecart_type|floatformat:2 }}%</td></tr>
-            <tr><td>Skewness :</td><td>{{ stats.distances.skewness|floatformat:3 }}</td></tr>
-            <tr><td>Kurtosis :</td><td>{{ stats.distances.kurtosis|floatformat:3 }}</td></tr>
-        </table>
-        </div>
-    </div>
 </div>
 <div id="progress-info-container">
     <div id="progress-info">
@@ -38,5 +13,6 @@
     </div>
     <div id="countdown">Chargement du compte à rebours...</div>
 </div>
-
+    <script src="{% static 'js/dynamicStat.js' %}"></script>
 <script src="{% static 'js/chart_update.js' %}"></script>
+
