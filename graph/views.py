@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from scipy.stats import skew, kurtosis
-
+from django.db.models import Subquery, OuterRef
 from .models import Course, Categorie, CoureurCategorie, Coureur, ResultatCourse, CourseType
 from django.views import generic
 import plotly.graph_objects as go
@@ -19,6 +19,7 @@ from django.db.models import Prefetch
 from django.db.models import Q
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from django.db.models import F, ExpressionWrapper, DurationField, FloatField
 class CourseList(generic.ListView):
     template_name = 'graph/index.html'
     context_object_name = 'nom_list'
@@ -93,20 +94,82 @@ class CoureurDetailView(DetailView):
 class VitesseDistributionView(TemplateView):
     template_name = 'graph/vitesse_distribution.html'
 
-    # Fonction pour calculer les statistiques
-    def calc_stats(self, data):
-        mean = np.mean(data)
-        std = np.std(data)
-        var = np.var(data)
-        return {
-            'moyenne': mean,
-            'ecart_type': std,
-            'variance': var,
-            'pourcentage_variance': (var / mean) * 100 if mean != 0 else 0,
-            'pourcentage_ecart_type': (std / mean) * 100 if mean != 0 else 0,
-            'skewness': skew(data) if len(np.unique(data)) > 1 else 0,
-            'kurtosis': kurtosis(data) if len(np.unique(data)) > 1 else -3
+    def filter_by_series(self, data, series_categories):
+        dataframes_by_series = {}
+
+        for series_name, filters in series_categories.items():
+            sexe_filter = filters.get('sexe', [])
+            nom_filter = filters.get('nom', [])
+
+            filtered_data = data[
+                (data['sexe'].apply(
+                    lambda x: not sexe_filter or (x is not None and any(sexe in sexe_filter for sexe in [x])))) &
+                (data['nom_categorie'].apply(
+                    lambda x: not nom_filter or (x is not None and any(cat in nom_filter for cat in [x]))))
+                ]
+
+            dataframes_by_series[series_name] = filtered_data
+
+        return dataframes_by_series
+
+    def calculate_stats(self, dataframes_by_series):
+        stats = {
+            'distances': {},
+            'vitesses': {}
         }
+
+        # Calculer les statistiques globales pour les distances
+        all_distances = []
+        for df in dataframes_by_series.values():
+            if not df.empty:
+                all_distances.extend(df['distance'].tolist())
+
+        if all_distances:
+            all_distances = np.array(all_distances)
+            stats['distances'] = {
+                'n': len(all_distances),
+                'mediane': np.median(all_distances),
+                'ecart_type': np.std(all_distances),
+                'variance': np.var(all_distances),
+                'pourcentage_ecart_type': (np.std(all_distances) / np.mean(all_distances)) * 100 if np.mean(
+                    all_distances) != 0 else 0,
+                'skewness': skew(all_distances) if len(np.unique(all_distances)) > 1 else 0,
+            }
+
+        # Calculer les statistiques pour les vitesses par série
+        for series_name, df in dataframes_by_series.items():
+            if not df.empty:
+                vitesses = df['vitesse']
+                mean = np.mean(vitesses)
+                std = np.std(vitesses)
+                var = np.var(vitesses)
+                skewness = skew(vitesses) if len(vitesses.unique()) > 1 else 0
+                kurt = kurtosis(vitesses) if len(vitesses.unique()) > 1 else -3
+                # Calcul des pourcentages d'écart-type droit et gauche
+                pct_ecart_type_droit = (np.sum(vitesses > mean) / len(vitesses)) * 100
+                pct_ecart_type_gauche = (np.sum(vitesses < mean) / len(vitesses)) * 100
+                decile_1 = np.percentile(vitesses, 10)
+                decile_10 = np.percentile(vitesses, 90)
+
+                stats['vitesses'][series_name] = {
+                    'n': len(df),
+                    'moyenne': mean,
+                    'mediane': np.median(vitesses),
+                    'ecart_type': std,
+                    'variance': var,
+                    'pourcentage_variance': (var / mean) * 100 if mean != 0 else 0,
+                    'pourcentage_ecart_type': (std / mean) * 100 if mean != 0 else 0,
+                    'pourcentage_ecart_type_droit': pct_ecart_type_droit,
+                    'pourcentage_ecart_type_gauche': pct_ecart_type_gauche,
+                    'decile_1': decile_1,
+                    'decile_10': decile_10,
+                    'skewness': skewness,
+                    'kurtosis': kurt
+                }
+            else:
+                stats['vitesses'][series_name] = None
+
+        return stats
 
     def get(self, request, *args, **kwargs):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -129,17 +192,40 @@ class VitesseDistributionView(TemplateView):
         # Convertir en liste de dictionnaires
         categories_list = [{'nom': cat['nom'], 'sexe': cat['sexe'] or 'Unknown'} for cat in categories]
         type_list = ['Course sur route', 'Foulee']
+        colors = [('M','blue'),('F','pink')]
+        series_categories = {'F': {'sexe':['F'],'nom':[]},'M':{'sexe':['M'],'nom':[]}}
         course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
         min_distance = int(self.request.GET.get('min_distance', 5000))
         max_distance = int(self.request.GET.get('max_distance', 10000))
         print('min dist', min_distance)
         print('max dist', max_distance)
-        # Filtrer et sélectionner aléatoirement 1000 résultats en une seule requête
+
         initial_results = ResultatCourse.objects.filter(
             Q(course__type__in=course_type_ids) &
             Q(course__distance__gte=min_distance) &
             Q(course__distance__lte=max_distance)
-        ).order_by('?')[:1000]
+        ).annotate(
+            annee_course=F('course__annee'),
+            distance_course = F('course__distance')
+        ).values('id', 'temps', 'annee_course', 'distance_course','coureur_id').order_by('?')[:1000]
+
+
+        # Conversion en DataFrame
+        results_df = pd.DataFrame(list(initial_results))
+        # Sous-requête pour obtenir la catégorie correspondante
+        categories_data = CoureurCategorie.objects.filter(
+            coureur_id__in=results_df['coureur_id'],
+            annee__in=results_df['annee_course']
+        ).values('coureur_id', 'annee', 'categorie__nom', 'categorie__sexe')
+
+        categories_df = pd.DataFrame(list(categories_data))
+
+        merged_data = results_df.merge(
+            categories_df,
+            left_on=['coureur_id', 'annee_course'],
+            right_on=['coureur_id', 'annee'],
+            how='left'
+        )
 
         total_count = ResultatCourse.objects.filter(
             Q(course__type__in=course_type_ids) &
@@ -147,21 +233,35 @@ class VitesseDistributionView(TemplateView):
             Q(course__distance__lte=max_distance)
         ).count()
 
-        # Calculer les vitesses et stocker les données nécessaires
         initial_ids = []
         vitesses = []
         distances = []
-        for resultat in initial_results:
-            initial_ids.append(resultat.id)
-            vitesse = resultat.course.distance / resultat.temps.total_seconds() * 3.6
+        sexes = []
+        noms_categories = []
+        print('là',merged_data)
+        for index, row in merged_data.iterrows():
+            # Accéder aux valeurs de chaque colonne
+            initial_ids.append(row['id'])
+            noms_categories.append(row['categorie__nom'])
+            sexes.append(row['categorie__sexe'])
+            distances.append(row['distance_course'])
+            vitesse = row['distance_course'] / row['temps'].total_seconds() * 3.6
             vitesses.append(vitesse)
-            distances.append(resultat.course.distance)
 
-        # Calcul des statistiques
-        stats = {
-            'vitesses': self.calc_stats(vitesses),
-            'distances': self.calc_stats(distances)
-        }
+
+        df = pd.DataFrame({
+            'id': initial_ids,
+            'vitesse': vitesses,
+            'distance': distances,
+            'sexe': sexes,
+            'nom_categorie': noms_categories
+        })
+
+        print(df)
+
+        # Utilisation des fonctions
+        filtered_dataframes = self.filter_by_series(df, series_categories)
+        stats = self.calculate_stats(filtered_dataframes)
 
         # Stocker ces données dans la session
         self.request.session['loaded_ids'] = initial_ids
@@ -169,14 +269,16 @@ class VitesseDistributionView(TemplateView):
         self.request.session['distances'] = distances
 
         # Générer le graphique
-        context['plot'] = self.generate_plot(initial_results, vitesses)
-        context['initialData'] = self.generate_plot_data(initial_results, vitesses)
+        context['plot'] = self.generate_plot_dynamic(filtered_dataframes, colors)
+        context['initialData'] = self.generate_plot_data_dynamic(filtered_dataframes, colors)
         context['total_count'] = total_count
-        context['loaded_count'] = len(initial_ids)
+        context['loaded_count'] = len(initial_results)
         context['min_distance'] = min_distance
         context['max_distance'] = max_distance
         context['refresh_interval'] = 25000
+        print('stats',stats)
         context['stats'] = stats
+        context['series_categories'] = series_categories
         context['categories'] = json.dumps(categories_list)
 
         return context
@@ -193,6 +295,10 @@ class VitesseDistributionView(TemplateView):
         max_distance = int(request.GET.get('max_distance', 10000))
         loaded_count = int(request.GET.get('loaded_count', 0))
         type_list = list(request.GET.get('course_types', ['Course sur route', 'Foulee']))
+        colors = list(request.GET.get('colors', [('M','blue'),('F','pink')]))
+        series_categories = json.loads(request.POST.get('seriescategories', '{"F": {"sexe":["F"],"nom":[]},"M":{"sexe":["M"],"nom":[]}}'))
+        print(type(series_categories))
+        print(series_categories)
         course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
         selected_categories = request.GET.getlist('categories')
         print('min distance : ', min_distance)
@@ -223,25 +329,65 @@ class VitesseDistributionView(TemplateView):
             Q(course__type__in=course_type_ids) &
             Q(course__distance__gte=min_distance) &
             Q(course__distance__lte=max_distance)
-        ).exclude(id__in=still_valid_ids).order_by('?')[:remaining_count]
+        ).exclude(id__in=still_valid_ids).annotate(
+            annee_course=F('course__annee'),
+            distance_course=F('course__distance')
+        ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id').order_by('?')[:remaining_count]
+
+        # Conversion en DataFrame
+        results_df = pd.DataFrame(list(new_results))
+        # Créer un DataFrame pour still_valid_ids
+        still_valid_results = ResultatCourse.objects.filter(id__in=still_valid_ids).annotate(
+            annee_course=F('course__annee'),
+            distance_course=F('course__distance')
+        ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id')
+
+        still_valid_df = pd.DataFrame(list(still_valid_results))
+
+        combined_df = pd.concat([results_df, still_valid_df], keys=['new', 'still_valid'], ignore_index=False)
+        combined_df = combined_df.reset_index(level=0).rename(columns={'level_0': 'source'})
+
+        # Obtenir les catégories pour tous les résultats
+        all_categories_data = CoureurCategorie.objects.filter(
+            coureur_id__in=combined_df['coureur_id'],
+            annee__in=combined_df['annee_course']
+        ).values('coureur_id', 'annee', 'categorie__nom', 'categorie__sexe')
+
+        all_categories_df = pd.DataFrame(list(all_categories_data))
+
+        # Fusionner toutes les données
+        merged_data = combined_df.merge(
+            all_categories_df,
+            left_on=['coureur_id', 'annee_course'],
+            right_on=['coureur_id', 'annee'],
+            how='left'
+        )
+
+        # Calculer les vitesses
+        merged_data['vitesse'] = merged_data['distance_course'] / merged_data['temps'].dt.total_seconds() * 3.6
+
+        # Créer le DataFrame final
+        df = merged_data[['id', 'vitesse', 'distance_course', 'categorie__sexe', 'categorie__nom']]
+        df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
+
+        # Utilisation des fonctions
+        filtered_dataframes = self.filter_by_series(df, series_categories)
+        stats = self.calculate_stats(filtered_dataframes)
+        print('stats_updated',stats)
 
         # Mettre à jour les IDs chargés
-        updated_loaded_ids = list(still_valid_ids) + list(new_results.values_list('id', flat=True))
+        updated_loaded_ids = list(df['id'])
         request.session['loaded_ids'] = updated_loaded_ids
         # Calculer les vitesses pour les nouveaux résultats
-        new_vitesses = [resultat.course.distance / resultat.temps.total_seconds() * 3.6 for resultat in new_results]
+        new_vitesses = merged_data[merged_data['source'] == 'new'][['vitesse']]
         print('taille de nouvelle vitesse',len(new_vitesses))
         resultat = ResultatCourse.objects.filter(id__in=updated_loaded_ids)
         print('taille de resultat', len(resultat))
         # Générer les données du graphique
-        plot_data = self.generate_plot_data(new_results, new_vitesses)
+        plot_data = self.generate_plot_data_dynamic(filtered_dataframes, colors)
         vitesses = self.request.session.get('vitesses')
         distances = self.request.session.get('distances')
         # Calcul des statistiques
-        stats = {
-            'vitesses': self.calc_stats(vitesses),
-            'distances': self.calc_stats(distances)
-        }
 
         return JsonResponse({
             'total_count': total_count,
@@ -327,44 +473,75 @@ class VitesseDistributionView(TemplateView):
 
         return fig.to_html(full_html=False)
 
-    def generate_plot_data_dynamic(self, resultats, vitesses, categories, colors):
+    def add_annotations_with_offset(self, layout, moyennes, color_dict):
+        """
+        Ajoute des annotations avec un décalage vertical pour éviter la superposition des textes.
+
+        :param layout: Le layout du graphique.
+        :param moyennes: Dictionnaire des moyennes par série.
+        :param color_dict: Dictionnaire des couleurs par série.
+        :return: Layout mis à jour avec les annotations.
+        """
+        offset_step = 0.05  # Décalage vertical entre les annotations
+        base_y = 1  # Position de base pour les annotations
+
+        for i, (series_name, moyenne) in enumerate(moyennes.items()):
+            if not pd.isna(moyenne):
+                layout['annotations'].append({
+                    'x': moyenne,
+                    'y': base_y - (i * offset_step),  # Décalage vertical
+                    'xref': 'x',
+                    'yref': 'paper',
+                    'text': f"Moyenne {series_name}: {moyenne:.2f} km/h",
+                    'showarrow': False,
+                    'font': {'color': color_dict.get(series_name, 'gray')}
+                })
+
+        return layout
+
+    def generate_plot_data_dynamic(self, filtered_dataframes, colors):
         """
         Génère les données pour un graphique avec des catégories dynamiques.
 
-        :param resultats: Liste des résultats.
-        :param vitesses: Liste des vitesses correspondantes.
-        :param categories: Liste des catégories dynamiques (par exemple, sexes ou autres).
-        :param colors: Dictionnaire associant chaque catégorie à une couleur.
+        :param filtered_dataframes: Dictionnaire de DataFrames filtrés par série.
+        :param colors: Liste de tuples (catégorie, couleur).
         :return: Données formatées pour le graphique.
         """
-        data = []
-        for i, resultat in enumerate(resultats):
-            vitesse = vitesses[i]
-            coureur_categorie = CoureurCategorie.objects.filter(coureur=resultat.coureur).first()
-            categorie = coureur_categorie.categorie.sexe if coureur_categorie else 'Inconnu'
-            data.append({'vitesse': vitesse, 'categorie': categorie})
-
-        df = pd.DataFrame(data)
         plot_data = []
+        color_dict = dict(colors)
+        moyennes = {}
+        series_count = len(filtered_dataframes)
 
-        for categorie in categories:
-            color = colors.get(categorie, 'gray')  # Utilise 'gray' par défaut si la couleur n'est pas définie
-            df_categorie = df[df['categorie'] == categorie]
-            plot_data.append({
-                'type': 'violin',
-                'x': df_categorie['vitesse'].tolist(),
-                'name': categorie,
-                'box': {'visible': True},
-                'line': {'color': color},
-                'opacity': 0.6,
-                'marker': {'color': color}
-            })
+        for i, (series_name, df) in enumerate(filtered_dataframes.items()):
+            if not df.empty:
+                color = color_dict.get(series_name, 'gray')
+                side = None
 
-        # Calculer les moyennes pour chaque catégorie
-        moyennes = {categorie: df[df['categorie'] == categorie]['vitesse'].mean() for categorie in categories}
+                # Condition pour les violons bilatéraux si moins de 7 séries
+                if series_count < 7:
+                    side = 'both'
+
+                # Alternance des violons pour plus de 6 séries
+                elif series_count >= 7:
+                    if i % 2 == 0:
+                        side = 'positive'
+                    else:
+                        side = 'negative'
+
+                plot_data.append({
+                    'type': 'violin',
+                    'x': df['vitesse'].tolist(),
+                    'name': series_name,
+                    'box': {'visible': True},
+                    'line': {'color': color},
+                    'opacity': 0.6,
+                    'marker': {'color': color},
+                    'side': side
+                })
+                moyennes[series_name] = df['vitesse'].mean()
 
         layout = {
-            'title': "Distribution des vitesses",
+            'title': "Distribution des vitesses par série",
             'xaxis': {'title': "Vitesse (km/h)"},
             'yaxis': {'title': "Densité"},
             'uirevision': 'constant',
@@ -374,53 +551,69 @@ class VitesseDistributionView(TemplateView):
                  'x1': moyenne,
                  'y0': 0,
                  'y1': 1,
-                 'line': {'color': colors.get(categorie, 'gray'), 'width': 2, 'dash': 'dash'}}
-                for categorie, moyenne in moyennes.items() if not pd.isna(moyenne)
-            ]
+                 'line': {'color': color_dict.get(series_name, 'gray'), 'width': 2, 'dash': 'dash'}}
+                for series_name, moyenne in moyennes.items() if not pd.isna(moyenne)
+            ],
+            'annotations': []  # Les annotations seront ajoutées dans l'étape suivante
         }
+
+        # Ajouter les annotations avec décalage
+        layout = self.add_annotations_with_offset(layout, moyennes, color_dict)
 
         return {'data': plot_data, 'layout': layout}
 
-    def generate_plot_dynamic(self, resultats, vitesses, categories, colors):
+    def generate_plot_dynamic(self, filtered_dataframes, colors):
         """
         Génère un graphique interactif avec des catégories dynamiques.
 
-        :param resultats: Liste des résultats.
-        :param vitesses: Liste des vitesses correspondantes.
-        :param categories: Liste des catégories dynamiques (par exemple, sexes ou autres).
-        :param colors: Dictionnaire associant chaque catégorie à une couleur.
+        :param filtered_dataframes: Dictionnaire de DataFrames filtrés par série.
+        :param colors: Liste de tuples (catégorie, couleur).
         :return: HTML du graphique interactif.
         """
-        data = []
-        for i, resultat in enumerate(resultats):
-            vitesse = vitesses[i]
-            coureur_categorie = CoureurCategorie.objects.filter(coureur=resultat.coureur).first()
-            categorie = coureur_categorie.categorie.sexe if coureur_categorie else 'Inconnu'
-            data.append({'vitesse': vitesse, 'categorie': categorie})
-
-        df = pd.DataFrame(data)
         fig = go.Figure()
+        color_dict = dict(colors)
+        series_count = len(filtered_dataframes)
 
-        for categorie in categories:
-            color = colors.get(categorie, 'gray')  # Utilise une couleur par défaut si non spécifiée
-            df_categorie = df[df['categorie'] == categorie]
-            fig.add_trace(go.Violin(x=df_categorie['vitesse'], name=categorie,
-                                    box_visible=True, line_color=color,
-                                    opacity=0.6,
-                                    marker=dict(color=color)))
+        for i, (series_name, df) in enumerate(filtered_dataframes.items()):
+            if not df.empty:
+                color = color_dict.get(series_name, 'gray')
+                side = None
+
+                if series_count < 7:
+                    side = 'both'
+                elif series_count >= 7:
+                    side = 'positive' if i % 2 == 0 else 'negative'
+
+                fig.add_trace(go.Violin(x=df['vitesse'], name=series_name,
+                                        box_visible=True, line_color=color,
+                                        opacity=0.6,
+                                        marker=dict(color=color),
+                                        side=side))
 
         fig.update_traces(opacity=0.4)
 
-        # Ajouter les lignes de moyenne pour chaque catégorie
-        moyennes = {categorie: df[df['categorie'] == categorie]['vitesse'].mean() for categorie in categories}
+        for i, (series_name, df) in enumerate(filtered_dataframes.items()):
+            if not df.empty:
+                moyenne = df['vitesse'].mean()
+                color = color_dict.get(series_name, 'gray')
+                if not pd.isna(moyenne):
+                    fig.add_annotation(
+                        x=moyenne,
+                        y=1 - (i * 0.05),  # Décalage vertical
+                        xref='x',
+                        yref='paper',
+                        text=f"Moyenne {series_name}: {moyenne:.2f} km/h",
+                        showarrow=False,
+                        font=dict(color=color)
+                    )
+                    fig.add_vline(x=moyenne, line_width=2, line_dash="dash", line_color=color)
 
-        for categorie, moyenne in moyennes.items():
-            if not pd.isna(moyenne):  # Vérifie si la moyenne est définie
-                fig.add_vline(x=moyenne, line_width=2, line_dash="dash", line_color=colors.get(categorie, "gray"))
-
-        fig.update_layout(title="Distribution des vitesses",
+        fig.update_layout(title="Distribution des vitesses par série",
                           xaxis_title="Vitesse (km/h)",
-                          yaxis_title="Densité")
+                          yaxis_title="Densité",
+                          violinmode="group")
 
         return fig.to_html(full_html=False)
+
+
 
