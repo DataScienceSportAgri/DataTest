@@ -1,19 +1,20 @@
 console.log(window.isRefreshing);
 console.log('chart_update.js loaded');
 
-
-// Vous pouvez maintenant utiliser updateCountdown dans ce fichier
-function waitForChartConfig() {
-        if (window.chartConfig && window.chartConfig.refreshInterval !== null) {
-            console.log('ChartConfig loaded:', window.chartConfig);
-            // Ici, vous pouvez appeler vos fonctions qui dépendent de chartConfig
-        } else {
-            console.log('Waiting for chartConfig...');
-            setTimeout(waitForChartConfig, 50);
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
         }
     }
-    let countdownIntervalId = null;
-
+    return cookieValue;
+}
 
 
 
@@ -44,16 +45,22 @@ function fetchUpdates() {
     const url = new URL(window.location.href);
     url.searchParams.set('action', 'update');
 
-    if (window.chartConfig && window.chartConfig.minDistance !== undefined) {
-        url.searchParams.set('min_distance', window.chartConfig.minDistance);
-    }
-    if (window.chartConfig && window.chartConfig.maxDistance !== undefined) {
-        url.searchParams.set('max_distance', window.chartConfig.maxDistance);
-    }
-    if (window.chartConfig && window.chartConfig.loadedCount !== undefined) {
-        url.searchParams.set('loaded_count', window.chartConfig.loadedCount);
+    if (window.chartConfig) {
+        if (window.chartConfig.minDistance !== undefined) {
+            url.searchParams.set('min_distance', window.chartConfig.minDistance);
+        }
+        if (window.chartConfig.maxDistance !== undefined) {
+            url.searchParams.set('max_distance', window.chartConfig.maxDistance);
+        }
+        if (window.chartConfig.loadedCount !== undefined) {
+            url.searchParams.set('loaded_count', window.chartConfig.loadedCount);
+        }
+        if (window.chartConfig.seriescategories !== undefined) {
+            url.searchParams.set('seriescategories', JSON.stringify(window.chartConfig.seriescategories));
+        }
     }
 
+    // Effectuer la requête GET
     return fetch(url, {
         method: 'GET',
         headers: {
@@ -72,24 +79,29 @@ function fetchUpdates() {
         if (data.is_update) {
             document.getElementById('loaded-count').textContent = data.loaded_count;
             document.getElementById('total-count').textContent = data.total_count;
-                                        // Mise à jour des statistiques
+            window.chartConfig.stats = data.stats;
             if (data.stats) {
-                updateStatistics(data.stats);
+                updateStatistics(window.chartConfig.stats);
             }
-                            // Générer les divs de statistiques pour les catégories sélectionnées
             if (data.stats && data.categories) {
                 generateStatsDivs(data.categories, data.stats);
             }
+
             window.chartConfig.loadedCount = data.loaded_count;
             window.chartConfig.totalCount = data.total_count;
         } else {
             document.getElementById('loaded-count').textContent = window.chartConfig.loadedCount;
             document.getElementById('total-count').textContent = window.chartConfig.totalCount;
         }
-    }).finally(() => {
+    })
+    .catch(error => {
+        console.error('Error during fetch:', error);
+    })
+    .finally(() => {
         window.isRefreshing = false;
     });
 }
+
 
 
 
@@ -99,9 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Setting up periodic updates');
     console.log('info' + window.chartConfig.refreshInterval);
 
-    // Start countdown and fetchUpdates when countdown hits 0
     updateCountdown({
         countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
         message: "Prochaine mise à jour dans {seconds} secondes"
-    }, document.getElementById('countdown'), fetchUpdates);  // Pass fetchUpdates as the callback
+    }, document.getElementById('countdown'), fetchUpdates);
 });
