@@ -39,68 +39,86 @@ function updateGraph(newData) {
     }
 }
 
-function fetchUpdates() {
-    window.isRefreshing = true;
-    console.log('Sending update request to server');
-    const url = new URL(window.location.href);
-    url.searchParams.set('action', 'update');
+function postUpdates() {
+window.isRefreshing = true;
+  console.log('Sending update request to server');
 
-    if (window.chartConfig) {
-        if (window.chartConfig.minDistance !== undefined) {
-            url.searchParams.set('min_distance', window.chartConfig.minDistance);
-        }
-        if (window.chartConfig.maxDistance !== undefined) {
-            url.searchParams.set('max_distance', window.chartConfig.maxDistance);
-        }
-        if (window.chartConfig.loadedCount !== undefined) {
-            url.searchParams.set('loaded_count', window.chartConfig.loadedCount);
-        }
-        if (window.chartConfig.seriescategories !== undefined) {
-            url.searchParams.set('seriescategories', JSON.stringify(window.chartConfig.seriescategories));
-        }
+  // Récupérer le jeton CSRF
+  let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+  if (!csrftoken) {
+    csrftoken = getCookie('csrftoken');
+  }
+
+  if (!csrftoken) {
+    console.error('CSRF token not found. Request may fail.');
+  }
+
+  // Préparer les données à envoyer
+  const data = {
+    action: 'update',
+    seriesCategories: window.chartConfig.seriesCategories || {},
+    minDistance: window.chartConfig.minDistance,
+    maxDistance: window.chartConfig.maxDistance,
+    course_types: window.chartConfig.type_list,
+    loaded_count: window.chartConfig.loadedCount
+  };
+  console.log('nouvelles données envoyées au serveur', data)
+
+  // Convertir l'objet en chaîne JSON
+  const jsonData = JSON.stringify(data);
+
+  // Effectuer la requête POST
+  return fetch('/graph/vitesse-distribution/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrftoken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: jsonData
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Erreur réseau');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log("Succès d'update':", data);
+
+    // Mettre à jour le graphique
+    updateGraph(data.plot_data);
+
+    // Mettre à jour les compteurs et les statistiques
+    if (data.is_update) {
+      document.getElementById('loaded-count').textContent = data.loaded_count;
+      document.getElementById('total-count').textContent = data.total_count;
+      window.chartConfig.stats = data.stats;
+      if (data.stats) {
+        updateStatistics(window.chartConfig.stats);
+      }
+      if (data.stats && data.categories_selected) {
+        generateStatsDivs(data.stats);
+      }
+
+      window.chartConfig.loadedCount = data.loaded_count;
+      window.chartConfig.totalCount = data.total_count;
+    } else {
+      document.getElementById('loaded-count').textContent = window.chartConfig.loadedCount;
+      document.getElementById('total-count').textContent = window.chartConfig.totalCount;
     }
 
-    // Effectuer la requête GET
-    return fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        updateGraph(data.plot_data);
-
-        if (data.is_update) {
-            document.getElementById('loaded-count').textContent = data.loaded_count;
-            document.getElementById('total-count').textContent = data.total_count;
-            window.chartConfig.stats = data.stats;
-            if (data.stats) {
-                updateStatistics(window.chartConfig.stats);
-            }
-            if (data.stats && data.categories) {
-                generateStatsDivs(data.categories, data.stats);
-            }
-
-            window.chartConfig.loadedCount = data.loaded_count;
-            window.chartConfig.totalCount = data.total_count;
-        } else {
-            document.getElementById('loaded-count').textContent = window.chartConfig.loadedCount;
-            document.getElementById('total-count').textContent = window.chartConfig.totalCount;
-        }
-    })
-    .catch(error => {
-        console.error('Error during fetch:', error);
-    })
-    .finally(() => {
-        window.isRefreshing = false;
-    });
+    return data;
+  })
+  .catch(error => {
+    console.error('Erreur:', error);
+    throw error;
+  })
+  .finally(() => {
+    window.isRefreshing = false;
+  });
 }
+
 
 
 
@@ -114,5 +132,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCountdown({
         countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
         message: "Prochaine mise à jour dans {seconds} secondes"
-    }, document.getElementById('countdown'), fetchUpdates);
+    }, document.getElementById('countdown'), postUpdates);
 });

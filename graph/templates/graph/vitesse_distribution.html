@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% csrf_token %}
 {% load static %}
 {% block content %}
 <h1>Distribution des vitesses</h1>
@@ -28,7 +28,7 @@
 <script>
 window.isRefreshing = false;
 </script>
-    <script src="{% static 'js/chartConfig.js' %}"></script>
+<script src="{% static 'js/chartConfig.js' %}"></script>
 
 <div id="course-types">
   <label>
@@ -66,35 +66,37 @@ window.isRefreshing = false;
 </div>
 
         <script src="{% static 'js/dragAndDrop.js' %}"></script>
-        <script src="{% static 'js/createDeleteSeries.js' %}"></script>
+<script src="{% static 'js/createDeleteSeries.js' %}"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const checkboxes = document.querySelectorAll('#course-types input[type="checkbox"]');
-  const fouleeCheckbox = document.querySelector('input[value="Foulée"]');
-  const routeCheckbox = document.querySelector('input[value="Course sur route"]');
+    document.addEventListener('DOMContentLoaded', function() {
+      const checkboxes = document.querySelectorAll('#course-types input[type="checkbox"]');
+      const fouleeCheckbox = document.querySelector('input[value="Foulée"]');
+      const routeCheckbox = document.querySelector('input[value="Course sur route"]');
 
-  checkboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-      const checkedBoxes = document.querySelectorAll('#course-types input[type="checkbox"]:checked');
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const checkedBoxes = document.querySelectorAll('#course-types input[type="checkbox"]:checked');
 
-      if (checkedBoxes.length > 2) {
-        this.checked = false;
-      } else if (checkedBoxes.length === 2) {
-        if (!(fouleeCheckbox.checked && routeCheckbox.checked)) {
-          this.checked = false;
-        }
-      }
+          if (checkedBoxes.length > 2) {
+            this.checked = false;
+          } else if (checkedBoxes.length === 2) {
+            if (!(fouleeCheckbox.checked && routeCheckbox.checked)) {
+              this.checked = false;
+            }
+          }
 
-      checkboxes.forEach(cb => {
-        if (cb !== fouleeCheckbox && cb !== routeCheckbox) {
-          cb.disabled = fouleeCheckbox.checked && routeCheckbox.checked;
-        }
+          checkboxes.forEach(cb => {
+            if (cb !== fouleeCheckbox && cb !== routeCheckbox) {
+              cb.disabled = fouleeCheckbox.checked && routeCheckbox.checked;
+            }
+          });
+          // Mettre à jour chartConfig.typeList
+          window.chartConfig.typeList = Array.from(document.querySelectorAll('#course-types input[type="checkbox"]:checked')).map(cb => cb.value);
+        });
       });
-      // Mettre à jour chartConfig.typeList
-      window.chartConfig.typeList = Array.from(document.querySelectorAll('#course-types input[type="checkbox"]:checked')).map(cb => cb.value);
     });
-  });
-});
+
 </script>
 
 <script src="{% static 'plotly.js-dist/plotly.js' %}"></script>
@@ -102,163 +104,216 @@ document.addEventListener('DOMContentLoaded', function() {
         <script src="{% static 'js/updateStats.js' %}"></script>
 
 <div class="range-container" style="width: 50%; margin: 20px auto;">
-  <link rel="stylesheet" href="{% static 'css/nouislider.min.css' %}">
+      <link rel="stylesheet" href="{% static 'css/nouislider.min.css' %}">
   <script src="{% static 'js/nouislider.min.js' %}"></script>
   <div id="slider"></div>
   <div id="slider-values">5 km - 10 km</div>
   <button id="submit-filter">Appliquer le filtre</button>
 </div>
-
 <script>
 function resetContainer() {
-    const container = document.getElementById('chart-container');
-    const progressinfo = document.getElementById('progress-info');
-    const countdown = document.getElementById('countdown');
-    if (container) {
-        container.innerHTML = '';
-    }
-    if (progressinfo) {
-        progressinfo.innerHTML = '';
-    }
-    if (countdown) {
-        countdown.innerHTML = '';
-    }
+  const container = document.getElementById('chart-container');
+  const progressinfo = document.getElementById('progress-info');
+  const countdown = document.getElementById('countdown');
+
+  if (container) {
+    container.innerHTML = '';
+  }
+  if (progressinfo) {
+    progressinfo.innerHTML = '';
+  }
+  if (countdown) {
+    countdown.innerHTML = '';
+  }
 }
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-    var slider = document.getElementById('slider');
-    var sliderValues = document.getElementById('slider-values');
+  var slider = document.getElementById('slider');
+  var sliderValues = document.getElementById('slider-values');
 
-    noUiSlider.create(slider, {
-        start: [5, 10],
-        connect: true,
-        range: {
-            'min': 900,
-            'max': 60000
-        },
-        step: 100,
-        format: {
-            to: function (value) {
-                return Math.round(value / 1000 * 10) / 10 + ' km';
-            },
-            from: function (value) {
-                return value.replace(' km', '') * 1000;
-            }
-        }
-    });
+  noUiSlider.create(slider, {
+    start: [5, 10],
+    connect: true,
+    range: {
+      'min': 900,
+      'max': 60000
+    },
+    step: 100,
+    format: {
+      to: function(value) {
+        return Math.round(value / 1000 * 10) / 10 + ' km';
+      },
+      from: function(value) {
+        return value.replace(' km', '') * 1000;
+      }
+    }
+  });
 
-    slider.noUiSlider.on('update', function (values) {
-        sliderValues.innerHTML = values.join(' - ');
-    });
-const observer = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
+  slider.noUiSlider.on('update', function(values) {
+    sliderValues.innerHTML = values.join(' - ');
   });
 });
+</script>
 
-observer.observe(document.getElementById('global'), { childList: true, subtree: true });
-document.getElementById('submit-filter').addEventListener('click', function () {
-    window.isRefreshing = true; // Arrêter le rafraîchissement
+<script>
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    // Extraire les données du DOM
+      const loadedCountElement = document.getElementById('loaded-count');
+      const totalCountElement = document.getElementById('total-count');
+      const refreshIntervalElement = document.getElementById('refresh-interval');
+      const typeListElement = document.getElementById('type-list');
 
+      // Mettre à jour window.chartConfig
+      window.chartConfig = {
+        loadedCount: loadedCountElement ? parseInt(loadedCountElement.textContent) : 0,
+        totalCount: totalCountElement ? parseInt(totalCountElement.textContent) : 0,
+        refreshInterval: refreshIntervalElement ? parseInt(refreshIntervalElement.textContent) : 0,
+        typeList: typeListElement ? JSON.parse(typeListElement.textContent) : [],
+        seriesCategories: updateSeriesCategories('series_categories')
+      };
+
+      console.log('window.chartConfig:', window.chartConfig);
+  });
+});
+</script>
+    <script>
+    function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+    </script>
+<script>
+document.getElementById('submit-filter').addEventListener('click', function() {
+    console.log('Bouton submit-filter cliqué');
+    window.isRefreshing = true;
 
     var values = slider.noUiSlider.get();
     var minDistance = parseFloat(values[0]) * 1000;
     var maxDistance = parseFloat(values[1]) * 1000;
-    var selectcategories = selectcategories
+    var selectcategories = window.chartConfig.seriesCategories;
     window.chartConfig.minDistance = minDistance;
     window.chartConfig.maxDistance = maxDistance;
-    var url = new URL(window.location.href);
-    url.searchParams.set('min_distance', minDistance);
-    url.searchParams.set('max_distance', maxDistance);
 
-    // Vérifier si typeList est un tableau, sinon le convertir
-    var typeList = Array.isArray(window.chartConfig.typeList) ? window.chartConfig.typeList : [window.chartConfig.typeList];
-    url.searchParams.set('course_types', typeList.join(','));
+    console.log('Valeurs du slider:', minDistance, maxDistance);
+    console.log('Catégories sélectionnées:', selectcategories);
 
-    // Récupérer les types de courses sélectionnés
-    var selectedCourseTypes = Array.isArray(window.chartConfig.typeList) ? window.chartConfig.typeList : [window.chartConfig.typeList];
-    url.searchParams.set('course_types', selectedCourseTypes.join(','));
-    url.searchParams.set('categories', selectcategories);
+    var typeList = Array.isArray(window.chartConfig.typeList)
+        ? window.chartConfig.typeList
+        : [window.chartConfig.typeList];
 
+    var selectedCourseTypes = Array.isArray(window.chartConfig.typeList)
+        ? window.chartConfig.typeList
+        : [window.chartConfig.typeList];
 
-    url.searchParams.set('action', 'submit');
+    console.log('Types de courses sélectionnés:', selectedCourseTypes);
 
-    fetch(url, {
-        method: 'GET',
+    var postData = {
+        min_distance: minDistance,
+        max_distance: maxDistance,
+        course_types: selectedCourseTypes.join(','),
+        action: 'submit',
+        seriesCategories: window.chartConfig.seriesCategories || {}
+    };
+
+    console.log('Données à envoyer:', postData);
+
+    const jsonData = JSON.stringify(postData);
+    console.log('Données JSON:', jsonData);
+
+    // Récupérer le jeton CSRF
+    let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrftoken) {
+        csrftoken = getCookie('csrftoken');
+    }
+
+    if (!csrftoken) {
+        console.error('CSRF token not found. Request may fail.');
+    }
+
+    fetch('/graph/vitesse-distribution/', {
+        method: 'POST',
         headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
             'X-Requested-With': 'XMLHttpRequest'
-        }
+        },
+        body: jsonData
     })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json(); // Changez ici pour récupérer les données JSON
+})
+.then(data => { // data contiendra l'objet JSON
+    if (data.html) {
+        console.log('HTML reçu');
+        resetContainer();
+        document.getElementById('global').innerHTML = data.html;
 
-.then(html => {
-            if (html) {
-                console.log('html', data.html);
-                resetContainer();
-                document.getElementById('global').innerHTML = data.html;
-                const scripts = document.getElementById('chart-container').querySelectorAll('script');
-                scripts.forEach(script => {
-                  const newScript = document.createElement('script');
-                  newScript.textContent = script.textContent;
-                  document.body.appendChild(newScript);
-                });
+      // Exécuter les scripts inclus dans le HTML
+      const scripts = document.getElementById('chart-container').querySelectorAll('script');
+      scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        newScript.textContent = script.textContent;
+        document.body.appendChild(newScript);
+      });
 
-                // Mettre à jour window.chartConfig
-                const loadedCount = document.getElementById('loaded-count');
-                const totalCount = document.getElementById('total-count');
-                const refreshInterval = document.getElementById('refresh-interval');
-                const typeList = document.getElementById('type-list');
-                                // Mise à jour des statistiques
-                if (data.stats) {
-                    updateStatistics(data.stats);
-                }
-                                // Générer les divs de statistiques pour les catégories sélectionnées
-                if (data.stats && data.categories) {
-                    generateStatsDivs(data.categories, data.stats);
-                }
-                console.log('loadedCount', loadedCount)
-                console.log('totalCount', totalCount)
-                console.log('refreshInterval', refreshInterval)
-                console.log('typeList', typeList)
-                if (loadedCount) window.chartConfig.loadedCount = parseInt(loadedCount.textContent);
-                if (totalCount) window.chartConfig.totalCount = parseInt(totalCount.textContent);
-                if (refreshInterval) window.chartConfig.refreshInterval = parseInt(refreshInterval.textContent);
-                // Mettre à jour window.chartConfig
-            if (typeList) {
-                try {
-                    window.chartConfig.typeList = JSON.parse(typeList.textContent);
-                } catch (e) {
-                    console.error('Erreur lors du parsing de type_list:', e);
-                }
-            }
+      // Extraire les données du DOM
+      const loadedCountElement = document.getElementById('loaded-count');
+      const totalCountElement = document.getElementById('total-count');
 
-                document.getElementById('loaded-count').textContent =  window.chartConfig.loadedCount;
-                document.getElementById('total-count').textContent =  window.chartConfig.totalCount;
-                window.isRefreshing = false;
-                // Obtenir l'élément de compte à rebours
-                const countdownElement = document.getElementById('countdown');
+      // Mettre à jour window.chartConfig
+      window.chartConfig.loadedCount = parseInt(loadedCountElement.textContent)
+      window.chartConfig.totalCount = parseInt(totalCountElement.textContent)
+      // Mettre à jour window.chartConfig avec les données reçues
+      window.chartConfig.stats = data.chartData.stats; // Récupérer les stats depuis data.chartData
+      if (data.chartData.stats) {
+        generateStatsDivs(data.chartData.stats);
+        updateStatistics(window.chartConfig.stats); // Mettre à jour les statistiques
+        console.log('submitting new stat')
+        }
 
-                // Effacer le contenu existant
-                if (countdownElement) {
-                    countdownElement.innerHTML = '';
-                }
 
-                // Relancer le compte à rebours à partir de zéro
-                updateCountdown({
-                    countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
-                    message: "Prochaine mise à jour dans {seconds} secondes"
-                }, countdownElement, fetchUpdates);  // Ajouter fetchUpdates comme callback
-            } else {
-                console.error('Unexpected response format');
-            }
+      console.log('window.chartConfig:', window.chartConfig);
 
-        });
-    });
+      // Relancer le compte à rebours
+      const countdownElement = document.getElementById('countdown');
+      if (countdownElement) {
+        countdownElement.innerHTML = '';
+        updateCountdown({
+          countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
+          message: "Prochaine mise à jour dans {seconds} secondes"
+        }, countdownElement, postUpdates);
+      }
+    } else {
+      console.error('Unexpected response format');
+    }
+  })
+  .catch(error => {
+    console.error('Erreur:', error);
+  })
+  .finally(() => {
+    console.log('Requête terminée');
+    window.isRefreshing = false;
+  });
 });
 </script>
+
     <div id="global" style="width: 100%; height: 620px;">
     {% include 'graph/partial_vitesse_distribution.html' %}
 </div>

@@ -20,6 +20,11 @@ from django.db.models import Q
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from django.db.models import F, ExpressionWrapper, DurationField, FloatField
+from django.views.decorators.csrf import csrf_exempt
+import ast
+
+
+
 class CourseList(generic.ListView):
     template_name = 'graph/index.html'
     context_object_name = 'nom_list'
@@ -91,6 +96,9 @@ class CoureurDetailView(DetailView):
         context['resultats'] = resultats
         context['categories_par_annee'] = categories_par_annee
         return context
+
+
+
 class VitesseDistributionView(TemplateView):
     template_name = 'graph/vitesse_distribution.html'
 
@@ -180,26 +188,64 @@ class VitesseDistributionView(TemplateView):
                 return self.get_updated_data(request)
         return super().get(request, *args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                # Charger les données JSON du corps de la requête
+                data = json.loads(request.body)
+
+                # Extraire la valeur de 'action'
+                action = data.get('action')
+
+                if action == 'submit':
+                    return self.handle_submit(request)
+                else:
+                    return self.get_updated_data(request)
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
     def handle_submit(self, request):
         request.session['user_data'] = {}
-        context = self.get_context_data()
+        context = self.get_context_data(request)
         html = render_to_string('graph/partial_vitesse_distribution.html', context, request=request)
-        return HttpResponse(html)
 
-    def get_context_data(self, **kwargs):
+        response_data = {
+            'html': html,
+            'chartData': {
+                'stats': context['stats'],
+            }
+        }
+
+        return JsonResponse(response_data)
+
+    @csrf_exempt
+    def get_context_data(self, request=None, **kwargs):
         context = super().get_context_data(**kwargs)
         categories = Categorie.objects.values('nom', 'sexe').distinct()
+        min_distance = 5000
+        max_distance = 10000
         # Convertir en liste de dictionnaires
         categories_list = [{'nom': cat['nom'], 'sexe': cat['sexe'] or 'Unknown'} for cat in categories]
         type_list = ['Course sur route', 'Foulee']
         colors = [('M','blue'),('F','pink')]
         series_categories = {'F': {'sexe':['F'],'nom':[]},'M':{'sexe':['M'],'nom':[]}}
-        course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
-        min_distance = int(self.request.GET.get('min_distance', 5000))
-        max_distance = int(self.request.GET.get('max_distance', 10000))
-        print('min dist', min_distance)
-        print('max dist', max_distance)
+        if request and request.method == 'POST':
+            try:
+                post_data = json.loads(request.body)
 
+                min_distance = int(post_data.get('min_distance', 5000))
+                max_distance = int(post_data.get('max_distance', 10000))
+                type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                series_categories = post_data.get('seriesCategories',
+                                                  {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
+                print('used new arg :', min_distance, max_distance, type_list, colors, series_categories)
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+        print('type de liste', type(type_list))
+        course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
+        print('course type ids',course_type_ids)
         initial_results = ResultatCourse.objects.filter(
             Q(course__type__in=course_type_ids) &
             Q(course__distance__gte=min_distance) &
@@ -208,10 +254,10 @@ class VitesseDistributionView(TemplateView):
             annee_course=F('course__annee'),
             distance_course = F('course__distance')
         ).values('id', 'temps', 'annee_course', 'distance_course','coureur_id').order_by('?')[:1000]
-
-
+        print('len de initial_results', len(initial_results))
         # Conversion en DataFrame
         results_df = pd.DataFrame(list(initial_results))
+        print('results_df', results_df)
         # Sous-requête pour obtenir la catégorie correspondante
         categories_data = CoureurCategorie.objects.filter(
             coureur_id__in=results_df['coureur_id'],
@@ -289,114 +335,125 @@ class VitesseDistributionView(TemplateView):
             'message': f"Prochaine mise à jour dans {seconds} secondes"
         }
 
+    @csrf_exempt
     def get_updated_data(self, request):
         print("Received update request from client")
-        min_distance = int(request.GET.get('min_distance', 5000))
-        max_distance = int(request.GET.get('max_distance', 10000))
-        loaded_count = int(request.GET.get('loaded_count', 0))
-        type_list = list(request.GET.get('course_types', ['Course sur route', 'Foulee']))
-        colors = list(request.GET.get('colors', [('M','blue'),('F','pink')]))
-        series_categories = json.loads(request.POST.get('seriescategories', '{"F": {"sexe":["F"],"nom":[]},"M":{"sexe":["M"],"nom":[]}}'))
-        print(type(series_categories))
-        print(series_categories)
-        course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
-        selected_categories = request.GET.getlist('categories')
-        print('min distance : ', min_distance)
-        print('max distance : ', max_distance)
-        print('loaded count : ', loaded_count)
-        # Obtenir le nombre total de résultats correspondant aux filtres
-        total_count = ResultatCourse.objects.filter(
-            Q(course__type__in=course_type_ids) &
-            Q(course__distance__gte=min_distance) &
-            Q(course__distance__lte=max_distance)
-        ).count()
-        print(total_count)
-        # Récupérer les IDs déjà chargés
-        loaded_ids = set(request.session.get('loaded_ids', []))
-        # Filtrer les résultats déjà chargés qui correspondent toujours aux critères
-        still_valid_ids = set(ResultatCourse.objects.filter(
-            Q(course__type__in=course_type_ids) &
-            Q(course__distance__gte=min_distance) &
-            Q(course__distance__lte=max_distance) &
-            Q(id__in=loaded_ids)
-        ).values_list('id', flat=True))
 
-        # Calculer le nombre de nouveaux résultats à charger
-        remaining_count = min(1000, total_count - len(still_valid_ids))
+        if request.method == 'POST':
+            try:
+                post_data = json.loads(request.body)
 
-        # Sélectionner aléatoirement de nouveaux résultats
-        new_results = ResultatCourse.objects.filter(
-            Q(course__type__in=course_type_ids) &
-            Q(course__distance__gte=min_distance) &
-            Q(course__distance__lte=max_distance)
-        ).exclude(id__in=still_valid_ids).annotate(
-            annee_course=F('course__annee'),
-            distance_course=F('course__distance')
-        ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id').order_by('?')[:remaining_count]
+                min_distance = int(post_data.get('minDistance', 5000))
+                max_distance = int(post_data.get('maxDistance', 10000))
+                loaded_count = int(post_data.get('loaded_count', 0))
+                type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                series_categories = post_data.get('seriesCategories',
+                                                  {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
+                print(type(series_categories))
+                print(series_categories)
+                course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
+                selected_categories = request.GET.getlist('categories')
+                print('min distance : ', min_distance)
+                print('max distance : ', max_distance)
+                print('loaded count : ', loaded_count)
+                # Obtenir le nombre total de résultats correspondant aux filtres
+                total_count = ResultatCourse.objects.filter(
+                    Q(course__type__in=course_type_ids) &
+                    Q(course__distance__gte=min_distance) &
+                    Q(course__distance__lte=max_distance)
+                ).count()
+                print(total_count)
+                # Récupérer les IDs déjà chargés
+                loaded_ids = set(request.session.get('loaded_ids', []))
+                # Filtrer les résultats déjà chargés qui correspondent toujours aux critères
+                still_valid_ids = set(ResultatCourse.objects.filter(
+                    Q(course__type__in=course_type_ids) &
+                    Q(course__distance__gte=min_distance) &
+                    Q(course__distance__lte=max_distance) &
+                    Q(id__in=loaded_ids)
+                ).values_list('id', flat=True))
 
-        # Conversion en DataFrame
-        results_df = pd.DataFrame(list(new_results))
-        # Créer un DataFrame pour still_valid_ids
-        still_valid_results = ResultatCourse.objects.filter(id__in=still_valid_ids).annotate(
-            annee_course=F('course__annee'),
-            distance_course=F('course__distance')
-        ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id')
+                # Calculer le nombre de nouveaux résultats à charger
+                remaining_count = min(1000, total_count - len(still_valid_ids))
 
-        still_valid_df = pd.DataFrame(list(still_valid_results))
+                # Sélectionner aléatoirement de nouveaux résultats
+                new_results = ResultatCourse.objects.filter(
+                    Q(course__type__in=course_type_ids) &
+                    Q(course__distance__gte=min_distance) &
+                    Q(course__distance__lte=max_distance)
+                ).exclude(id__in=still_valid_ids).annotate(
+                    annee_course=F('course__annee'),
+                    distance_course=F('course__distance')
+                ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id').order_by('?')[:remaining_count]
 
-        combined_df = pd.concat([results_df, still_valid_df], keys=['new', 'still_valid'], ignore_index=False)
-        combined_df = combined_df.reset_index(level=0).rename(columns={'level_0': 'source'})
+                # Conversion en DataFrame
+                results_df = pd.DataFrame(list(new_results))
+                # Créer un DataFrame pour still_valid_ids
+                still_valid_results = ResultatCourse.objects.filter(id__in=still_valid_ids).annotate(
+                    annee_course=F('course__annee'),
+                    distance_course=F('course__distance')
+                ).values('id', 'temps', 'annee_course', 'distance_course', 'coureur_id')
 
-        # Obtenir les catégories pour tous les résultats
-        all_categories_data = CoureurCategorie.objects.filter(
-            coureur_id__in=combined_df['coureur_id'],
-            annee__in=combined_df['annee_course']
-        ).values('coureur_id', 'annee', 'categorie__nom', 'categorie__sexe')
+                still_valid_df = pd.DataFrame(list(still_valid_results))
 
-        all_categories_df = pd.DataFrame(list(all_categories_data))
+                combined_df = pd.concat([results_df, still_valid_df], keys=['new', 'still_valid'], ignore_index=False)
+                combined_df = combined_df.reset_index(level=0).rename(columns={'level_0': 'source'})
 
-        # Fusionner toutes les données
-        merged_data = combined_df.merge(
-            all_categories_df,
-            left_on=['coureur_id', 'annee_course'],
-            right_on=['coureur_id', 'annee'],
-            how='left'
-        )
+                # Obtenir les catégories pour tous les résultats
+                all_categories_data = CoureurCategorie.objects.filter(
+                    coureur_id__in=combined_df['coureur_id'],
+                    annee__in=combined_df['annee_course']
+                ).values('coureur_id', 'annee', 'categorie__nom', 'categorie__sexe')
 
-        # Calculer les vitesses
-        merged_data['vitesse'] = merged_data['distance_course'] / merged_data['temps'].dt.total_seconds() * 3.6
+                all_categories_df = pd.DataFrame(list(all_categories_data))
 
-        # Créer le DataFrame final
-        df = merged_data[['id', 'vitesse', 'distance_course', 'categorie__sexe', 'categorie__nom']]
-        df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
+                # Fusionner toutes les données
+                merged_data = combined_df.merge(
+                    all_categories_df,
+                    left_on=['coureur_id', 'annee_course'],
+                    right_on=['coureur_id', 'annee'],
+                    how='left'
+                )
 
-        # Utilisation des fonctions
-        filtered_dataframes = self.filter_by_series(df, series_categories)
-        stats = self.calculate_stats(filtered_dataframes)
-        print('stats_updated',stats)
+                # Calculer les vitesses
+                merged_data['vitesse'] = merged_data['distance_course'] / merged_data['temps'].dt.total_seconds() * 3.6
 
-        # Mettre à jour les IDs chargés
-        updated_loaded_ids = list(df['id'])
-        request.session['loaded_ids'] = updated_loaded_ids
-        # Calculer les vitesses pour les nouveaux résultats
-        new_vitesses = merged_data[merged_data['source'] == 'new'][['vitesse']]
-        print('taille de nouvelle vitesse',len(new_vitesses))
-        resultat = ResultatCourse.objects.filter(id__in=updated_loaded_ids)
-        print('taille de resultat', len(resultat))
-        # Générer les données du graphique
-        plot_data = self.generate_plot_data_dynamic(filtered_dataframes, colors)
-        vitesses = self.request.session.get('vitesses')
-        distances = self.request.session.get('distances')
-        # Calcul des statistiques
+                # Créer le DataFrame final
+                df = merged_data[['id', 'vitesse', 'distance_course', 'categorie__sexe', 'categorie__nom']]
+                df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
 
-        return JsonResponse({
-            'total_count': total_count,
-            'stats': stats,
-            'loaded_count': len(resultat),
-            'plot_data': plot_data,
-            'is_update': True,
-            'categories_selected': selected_categories
-        })
+                # Utilisation des fonctions
+                filtered_dataframes = self.filter_by_series(df, series_categories)
+                stats = self.calculate_stats(filtered_dataframes)
+                print('stats_updated',stats)
+
+                # Mettre à jour les IDs chargés
+                updated_loaded_ids = list(df['id'])
+                request.session['loaded_ids'] = updated_loaded_ids
+                # Calculer les vitesses pour les nouveaux résultats
+                new_vitesses = merged_data[merged_data['source'] == 'new'][['vitesse']]
+                print('taille de nouvelle vitesse',len(new_vitesses))
+                resultat = ResultatCourse.objects.filter(id__in=updated_loaded_ids)
+                print('taille de resultat', len(resultat))
+                # Générer les données du graphique
+                plot_data = self.generate_plot_data_dynamic(filtered_dataframes, colors)
+                vitesses = self.request.session.get('vitesses')
+                distances = self.request.session.get('distances')
+                # Calcul des statistiques
+
+                return JsonResponse({
+                    'total_count': total_count,
+                    'stats': stats,
+                    'loaded_count': len(resultat),
+                    'plot_data': plot_data,
+                    'is_update': True,
+                    'categories_selected': selected_categories
+                })
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed'}, status=405)
 
     def generate_plot_data(self, resultats, vitesses):
         data = []

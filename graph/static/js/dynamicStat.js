@@ -67,8 +67,9 @@ function generateStatsTable(statData, type) {
     const rows = [];
     const units = {
         'distances': {
-            'default': 'km',
+            'default': 'm',
             'n': ' ',
+            'variance': 'm²',
             'skewness': ' '
         },
         'vitesses': {
@@ -90,7 +91,7 @@ function generateStatsTable(statData, type) {
 
         // Formatage spécifique pour certaines clés
         if (typeof value === 'number') {
-            if (['n', 'skewness'].includes(key)) {
+            if (['n', 'variance'].includes(key)) {
                 formattedValue = value.toFixed(0);
             } else if (key.startsWith('pourcentage')) {
                 formattedValue = value.toFixed(2);
@@ -102,7 +103,8 @@ function generateStatsTable(statData, type) {
         // Formatage du nom de la clé pour l'affichage
         const displayKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
 
-        rows.push(`<tr><td>${displayKey} :</td><td>${formattedValue}${unit ? ' ' + unit : ''}</td></tr>`);
+        rows.push(`<tr data-key="${key}"><td>${displayKey} :</td><td>${formattedValue}${unit ? ' ' + unit : ''}</td></tr>`);
+
     });
 
     return `<table>${rows.join('')}</table>`;
