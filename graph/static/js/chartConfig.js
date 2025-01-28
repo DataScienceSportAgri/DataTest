@@ -12,7 +12,6 @@ function getValue(id) {
     }
     return value;
 }
-// Définir updateSeriesCategories en dehors de fetchUpdates
 function updateSeriesCategories() {
     const seriesCategories = {};
     const seriesDivs = document.querySelectorAll('#series_container > div');
@@ -37,6 +36,7 @@ function updateSeriesCategories() {
 
     return seriesCategories;
 }
+
 
 
 

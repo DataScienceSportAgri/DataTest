@@ -14,10 +14,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     createInitialSeries();
 
-    function createInitialSeries() {
-        createSeriesWithTitle('F');
-        createSeriesWithTitle('M');
-    }
+function updateSeriesCategories() {
+    const seriesCategories = {};
+    const seriesDivs = document.querySelectorAll('#series_container > div');
+
+    seriesDivs.forEach(seriesDiv => {
+        const seriesName = seriesDiv.querySelector('h4').textContent;
+        const categoryBoxes = seriesDiv.querySelectorAll('.category-box');
+        const categories = {
+            sexe: [],
+            nom: []
+        };
+
+        categoryBoxes.forEach(box => {
+            categories.nom.push(box.textContent);
+            if (!categories.sexe.includes(box.dataset.sexe)) {
+                categories.sexe.push(box.dataset.sexe);
+            }
+        });
+
+        seriesCategories[seriesName] = categories;
+    });
+
+    return seriesCategories;
+}
+
+
+function createInitialSeries() {
+    createSeriesWithTitle('F');
+    createSeriesWithTitle('M');
+    window.chartConfig.seriesCategories = updateSeriesCategories();
+}
+
     function dragStart(e) {
         e.dataTransfer.setData('text/plain', e.target.textContent);
     }
@@ -64,6 +92,14 @@ function removeLastSeries() {
 }
 
 
-    addButton.addEventListener('click', () => createSeriesWithTitle());
-    removeButton.addEventListener('click', removeLastSeries);
+addButton.addEventListener('click', () => {
+    createSeriesWithTitle();
+    window.chartConfig.seriesCategories = updateSeriesCategories();
+});
+
+removeButton.addEventListener('click', () => {
+    removeLastSeries();
+    window.chartConfig.seriesCategories = updateSeriesCategories();
+});
+
 });

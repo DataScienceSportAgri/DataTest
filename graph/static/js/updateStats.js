@@ -29,7 +29,7 @@ function updateDistanceStats(distanceStats, keys) {
         if ($table.length) {
             keys.forEach(key => {
                 console.log(`Updating distance stat: ${key}`);
-                const $row = $table.find(`tr:has(td:first-child:contains("${key}"))`);
+                const $row = $table.find(`tr[data-key="${key}"]`);
                 console.log(`Row for ${key} found:`, $row.length);
 
                 if ($row.length) {
@@ -69,7 +69,8 @@ function updateVitesseStats(vitesseStats, keys, series) {
                 if ($table.length) {
                     keys.forEach(key => {
                         console.log(`Updating stat ${key} for serie ${serieName}`);
-                        const $row = $table.find(`tr:has(td:first-child:contains("${key}"))`);
+                        const $row = $table.find(`tr[data-key="${key}"]`);
+
                         console.log(`Row for ${key} in ${serieName} found:`, $row.length);
 
                         if ($row.length) {
@@ -94,15 +95,21 @@ function formatStatValue(key, value, sectionName) {
     const unit = sectionName === 'vitesses' ? 'km/h' : 'm';
     switch (key) {
         case 'moyenne':
-        case 'ecart_type':
+            return value.toFixed(3);
+        case 'ecart type':
+            return value.toFixed(3);
         case 'mediane':
             return `${value.toFixed(2)} ${unit}`;
         case 'variance':
             return `${value.toFixed(2)} ${unit === 'km/h' ? '(km/h)²' : 'm²'}`;
-        case 'pourcentage_variance':
-        case 'pourcentage_ecart_type':
+        case 'pourcentage variance':
+            return `${value.toFixed(2)}%`;
+        case 'pourcentage ecart type droit':
+            return `${value.toFixed(2)}%`;
+        case 'pourcentage ecart type gauche':
             return `${value.toFixed(2)}%`;
         case 'skewness':
+            return value.toFixed(3);
         case 'kurtosis':
             return value.toFixed(3);
         default:

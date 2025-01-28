@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const rawData = document.getElementById('categories').textContent;
-const categoriesData = JSON.parse(JSON.parse(rawData));
+const categoriesData = JSON.parse(JSON.parse(JSON.parse(rawData)));
 
 console.log('Double parsed data:', categoriesData);
 console.log('Is array after double parsing:', Array.isArray(categoriesData));
@@ -41,7 +41,6 @@ function drop(e) {
         e.target.appendChild(draggedElement);
     }
     updateSelectedCategories();
-    window.chartConfig.seriescategories = updateSeriesCategories(); // Ajoutez cette ligne
 }
 
 
