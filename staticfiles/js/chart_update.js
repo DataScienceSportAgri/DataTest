@@ -1,19 +1,20 @@
 console.log(window.isRefreshing);
 console.log('chart_update.js loaded');
 
-
-// Vous pouvez maintenant utiliser updateCountdown dans ce fichier
-function waitForChartConfig() {
-        if (window.chartConfig && window.chartConfig.refreshInterval !== null) {
-            console.log('ChartConfig loaded:', window.chartConfig);
-            // Ici, vous pouvez appeler vos fonctions qui dépendent de chartConfig
-        } else {
-            console.log('Waiting for chartConfig...');
-            setTimeout(waitForChartConfig, 50);
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
         }
     }
-    let countdownIntervalId = null;
-
+    return cookieValue;
+}
 
 
 
@@ -38,50 +39,87 @@ function updateGraph(newData) {
     }
 }
 
-function fetchUpdates() {
-    window.isRefreshing = true;
-    console.log('Sending update request to server');
-    const url = new URL(window.location.href);
-    url.searchParams.set('action', 'update');
+function postUpdates() {
+window.isRefreshing = true;
+  console.log('Sending update request to server');
 
-    if (window.chartConfig && window.chartConfig.minDistance !== undefined) {
-        url.searchParams.set('min_distance', window.chartConfig.minDistance);
+  // Récupérer le jeton CSRF
+  let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+  if (!csrftoken) {
+    csrftoken = getCookie('csrftoken');
+  }
+
+  if (!csrftoken) {
+    console.error('CSRF token not found. Request may fail.');
+  }
+
+  // Préparer les données à envoyer
+  const data = {
+    action: 'update',
+    seriesCategories: window.chartConfig.seriesCategories || {},
+    minDistance: window.chartConfig.minDistance,
+    maxDistance: window.chartConfig.maxDistance,
+    course_types: window.chartConfig.type_list,
+    loaded_count: window.chartConfig.loadedCount
+  };
+  console.log('nouvelles données envoyées au serveur', data)
+
+  // Convertir l'objet en chaîne JSON
+  const jsonData = JSON.stringify(data);
+
+  // Effectuer la requête POST
+  return fetch('/graph/vitesse-distribution/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrftoken,
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: jsonData
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Erreur réseau');
     }
-    if (window.chartConfig && window.chartConfig.maxDistance !== undefined) {
-        url.searchParams.set('max_distance', window.chartConfig.maxDistance);
-    }
-    if (window.chartConfig && window.chartConfig.loadedCount !== undefined) {
-        url.searchParams.set('loaded_count', window.chartConfig.loadedCount);
+    return response.json();
+  })
+  .then(data => {
+    console.log("Succès d'update':", data);
+
+    // Mettre à jour le graphique
+    updateGraph(data.plot_data);
+
+    // Mettre à jour les compteurs et les statistiques
+    if (data.is_update) {
+      document.getElementById('loaded-count').textContent = data.loaded_count;
+      document.getElementById('total-count').textContent = data.total_count;
+      window.chartConfig.stats = data.stats;
+      if (data.stats) {
+        updateStatistics(window.chartConfig.stats);
+      }
+      if (data.stats && data.categories_selected) {
+        generateStatsDivs(data.stats);
+      }
+
+      window.chartConfig.loadedCount = data.loaded_count;
+      window.chartConfig.totalCount = data.total_count;
+    } else {
+      document.getElementById('loaded-count').textContent = window.chartConfig.loadedCount;
+      document.getElementById('total-count').textContent = window.chartConfig.totalCount;
     }
 
-    return fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        updateGraph(data.plot_data);
-
-        if (data.is_update) {
-            document.getElementById('loaded-count').textContent = data.loaded_count;
-            document.getElementById('total-count').textContent = data.total_count;
-            window.chartConfig.loadedCount = data.loaded_count;
-            window.chartConfig.totalCount = data.total_count;
-        } else {
-            document.getElementById('loaded-count').textContent = window.chartConfig.loadedCount;
-            document.getElementById('total-count').textContent = window.chartConfig.totalCount;
-        }
-    }).finally(() => {
-        window.isRefreshing = false;
-    });
+    return data;
+  })
+  .catch(error => {
+    console.error('Erreur:', error);
+    throw error;
+  })
+  .finally(() => {
+    window.isRefreshing = false;
+  });
 }
+
+
 
 
 
@@ -91,9 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Setting up periodic updates');
     console.log('info' + window.chartConfig.refreshInterval);
 
-    // Start countdown and fetchUpdates when countdown hits 0
     updateCountdown({
         countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
         message: "Prochaine mise à jour dans {seconds} secondes"
-    }, document.getElementById('countdown'), fetchUpdates);  // Pass fetchUpdates as the callback
+    }, document.getElementById('countdown'), postUpdates);
 });
