@@ -9,9 +9,29 @@ class Categorie(models.Model):
     age = models.CharField(max_length=20, null=True, blank=True)
     sexe = models.CharField(max_length=10, null=True, blank=True)
     type = models.CharField(max_length=20, null=True, blank=True)
+    id_categoriesimplifie = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.nom
+
+class CategorieSimplifiee(models.Model):
+    nom = models.CharField(max_length=100)
+    sexe = models.CharField(max_length=1, choices=[
+        ('M', 'Masculin'),
+        ('F', 'Féminin'),
+        ('X', 'Mixte ou Inconnu'),
+    ])
+    age_min = models.IntegerField(null=True, blank=True)
+    age_max = models.IntegerField(null=True, blank=True)
+
+
+    def __str__(self):
+        return f"{self.nom} ({self.sexe}"
+
+
+    class Meta:
+        verbose_name = "Catégorie simplifiée"
+        verbose_name_plural = "Catégories simplifiées"
 
 class Coureur(models.Model):
     nom = models.CharField(max_length=100)

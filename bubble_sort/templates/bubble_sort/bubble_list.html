@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+<script>
+    var bubbleListUrl = "{% url 'bubble_list' classement.id %}";
+</script>
+
+{% block content %}
+    {% load static %}
+    <script src="{% static 'js/deplacement.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/bubble.css' %}">
+
+    <h1>{{ classement.name }}</h1>
+    <form id="update-name-form" method="post" action="{% url 'bubble_list' classement.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_name">
+        <input type="text" name="eclassement_name" value="{{ classement.name }}">
+        <button type="submit">Mettre à jour le nom</button>
+    </form>
+
+    <div id="bubble-container">
+        {% for bubble in bubbles %}
+        <div class="bubble" data-id="{{ bubble.id }}">
+                <div class="bubble-number"></div>
+                    <div class="delete-bubble">×</div>
+            <textarea>{{ bubble.content }}</textarea>
+        <div class="resize-handle ui-resizable-handle ui-resizable-se"></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not bubbles %}
+        <p>Ce classement est vide. Commencez par ajouter une bulle !</p>
+    {% endif %}
+
+    <button id="add-bubble">Ajouter une bulle</button>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script>
+    $(function() {
+        $("#bubble-container").sortable({
+            update: function(event, ui) {
+                var positions = $(this).sortable('toArray', {attribute: 'data-id'});
+                $.post("{% url 'update_positions' classement.id %}", {
+                    positions: positions.join(','),
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                });
+            }
+        });
+
+        $("#add-bubble").click(function() {
+            $.post("{% url 'bubble_list' classement.id %}", {
+                action: 'add_bubble',
+                content: '',
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }, function(response) {
+                if (response.status === 'success') {
+                    var newBubble = $('<div class="bubble" data-id="' + response.id + '"><textarea></textarea></div>');
+                    $("#bubble-container").append(newBubble);
+                    $("#bubble-container").sortable('refresh');
+                }
+            });
+        });
+
+        $("#update-name-form").submit(function(e) {
+            e.preventDefault();
+            $.post($(this).attr('action'), $(this).serialize(), function(response) {
+                if (response.status === 'success') {
+                    alert('Nom du classement mis à jour');
+                }
+            });
+        });
+    });
+    </script>
+{% endblock %}

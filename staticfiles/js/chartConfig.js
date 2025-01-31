@@ -12,6 +12,31 @@ function getValue(id) {
     }
     return value;
 }
+function updateSeriesCategories() {
+    const seriesCategories = {};
+    const seriesDivs = document.querySelectorAll('#series_container > div');
+
+    seriesDivs.forEach(seriesDiv => {
+        const seriesName = seriesDiv.querySelector('h4').textContent;
+        const categoryBoxes = seriesDiv.querySelectorAll('.category-box');
+        const categories = {
+            sexe: [],
+            nom: []
+        };
+
+        categoryBoxes.forEach(box => {
+            categories.nom.push(box.textContent);
+            if (!categories.sexe.includes(box.dataset.sexe)) {
+                categories.sexe.push(box.dataset.sexe);
+            }
+        });
+
+        seriesCategories[seriesName] = categories;
+    });
+
+    return seriesCategories;
+}
+
 
 
 
@@ -22,6 +47,9 @@ const chartConfig = {
     loadedCount: getValue('loaded_count'),
     minDistance: getValue('min_distance'),
     maxDistance: getValue('max_distance'),
+    stats:getValue('stats'),
+    categories: getValue('categories'),
+    seriesCategories: updateSeriesCategories('series_categories'),
     typeList: getValue('type_list')
 };
 

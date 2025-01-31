@@ -19,7 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'node_modules'),
-    os.path.join(BASE_DIR, 'graph','static'),
+    #os.path.join(BASE_DIR, 'graph','static'),
+    #os.path.join(BASE_DIR, 'bubble_sort','static'),
     os.path.join(BASE_DIR, 'static')
 ]
 
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'bubble_sort.apps.BubbleSortConfig'
 ]
 
 MIDDLEWARE = [
@@ -138,8 +140,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
@@ -148,3 +152,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DJANGO_COMMANDER_COMMAND_FOLDERS = [
     os.path.abspath(os.path.join('DataTest\graph\management', "commands")),
 ]
+
+LOGIN_URL = '/login/'  # Ajustez le chemin selon votre configuration
+
+LOGIN_REDIRECT_URL = '/'  # Redirige vers la page d'accueil après la connexion
