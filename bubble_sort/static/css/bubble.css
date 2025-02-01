@@ -81,15 +81,31 @@
 }
 
 .resize-handle {
+    width: 20px;
+    height: 20px;
     position: absolute;
     right: 0;
     bottom: 0;
-    width: 10px;
-    height: 10px;
-    background-color: #ccc;
-    cursor: se-resize;
-    z-index: 2;
+    background: rgba(0,0,0,0.1);
+    cursor: nwse-resize;
+    transition: opacity 0.2s;
+    opacity: 0;
 }
+
+.bubble:hover .resize-handle {
+    opacity: 1;
+}
+
+.bubble.resizing-active .resize-handle {
+    background: rgba(0,0,0,0.3);
+}
+
+.bubble.dragging {
+    opacity: 0.8;
+    z-index: 1000;
+    cursor: grabbing;
+}
+
 
 .delete-bubble {
     position: absolute;
