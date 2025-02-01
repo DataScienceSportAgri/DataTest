@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-<script>
-    var bubbleListUrl = "{% url 'bubble_list' classement.id %}";
-</script>
+{% csrf_token %}
 
 {% block content %}
     {% load static %}
@@ -16,7 +14,7 @@
         <button type="submit">Mettre à jour le nom</button>
     </form>
 
-    <div id="bubble-container">
+<div id="bubble-container" data-bubble-list-url="{% url 'bubble_list' classement.id %}">
         {% for bubble in bubbles %}
         <div class="bubble" data-id="{{ bubble.id }}">
                 <div class="bubble-number"></div>
@@ -37,39 +35,79 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
     <script>
-    $(function() {
-        $("#bubble-container").sortable({
-            update: function(event, ui) {
-                var positions = $(this).sortable('toArray', {attribute: 'data-id'});
-                $.post("{% url 'update_positions' classement.id %}", {
-                    positions: positions.join(','),
-                    csrfmiddlewaretoken: '{{ csrf_token }}'
-                });
-            }
-        });
+$(function() {
+    $("#bubble-container").sortable({
+        update: function(event, ui) {
+            var positions = $(this).sortable('toArray', {attribute: 'data-id'});
+            $.ajax({
+                url: "{% url 'bubble_list' classement.id %}",
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'update_positions',
+                    positions: positions
+                }),
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        console.log('Positions updated successfully');
+                    } else {
+                        console.error('Error updating positions:', response.message);
+                    }
+                }
+            });
+        }
+    });
 
-        $("#add-bubble").click(function() {
-            $.post("{% url 'bubble_list' classement.id %}", {
+    $("#add-bubble").click(function() {
+        $.ajax({
+            url: "{% url 'bubble_list' classement.id %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
                 action: 'add_bubble',
-                content: '',
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            }, function(response) {
+                content: ''
+            }),
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
                 if (response.status === 'success') {
                     var newBubble = $('<div class="bubble" data-id="' + response.id + '"><textarea></textarea></div>');
                     $("#bubble-container").append(newBubble);
                     $("#bubble-container").sortable('refresh');
+                } else {
+                    console.error('Error adding bubble:', response.message);
                 }
-            });
-        });
-
-        $("#update-name-form").submit(function(e) {
-            e.preventDefault();
-            $.post($(this).attr('action'), $(this).serialize(), function(response) {
-                if (response.status === 'success') {
-                    alert('Nom du classement mis à jour');
-                }
-            });
+            }
         });
     });
+
+    $("#update-name-form").submit(function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                action: 'update_name',
+                classement_name: $('#id_name').val()
+            }),
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('Nom du classement mis à jour');
+                } else {
+                    console.error('Error updating classement name:', response.message);
+                }
+            }
+        });
+    });
+});
+
     </script>
 {% endblock %}
