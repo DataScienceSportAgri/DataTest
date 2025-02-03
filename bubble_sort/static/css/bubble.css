@@ -1,9 +1,9 @@
 .bubble {
-    width: 200px;
+    width: 1000px;
     min-width: 100px;  /* Taille minimale en largeur */
-    max-width: 400px;  /* Taille maximale en largeur */
+    max-width: 1800px;  /* Taille maximale en largeur */
     min-height: 100px; /* Taille minimale en hauteur */
-    max-height: 300px; /* Taille maximale en hauteur */
+    max-height: 600px; /* Taille maximale en hauteur */
     background-color: rgba(255, 255, 255, 0.7); /* Fond blanc semi-transparent */
     border-radius: 10px;
     margin: 10px;
@@ -80,17 +80,6 @@
     transition: background-color 0.3s ease;
 }
 
-.resize-handle {
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.1);
-    cursor: nwse-resize;
-    transition: opacity 0.2s;
-    opacity: 0;
-}
 
 .bubble:hover .resize-handle {
     opacity: 1;
@@ -121,4 +110,80 @@
     cursor: pointer;
     font-size: 16px;
     z-index: 2;
+}
+
+.drag-handle {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.1);
+    cursor: move;
+    border-radius: 3px;
+    z-index: 2;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.1);
+    cursor: nwse-resize;
+    border-radius: 3px;
+    z-index: 2;
+}
+
+.bubble-container {
+    --color-start: #00FF00;
+    --color-end: #FF0000;
+}
+
+.bubble {
+    background: linear-gradient(
+        to bottom right,
+        var(--color-start),
+        var(--color-end)
+    );
+}
+
+.bubble-title {
+    font-size: 1.4em;
+    font-weight: bold;
+    border: none;
+    background: transparent;
+    resize: none;
+    width: 100%;
+    margin: 5px 0;
+    padding: 5px;
+}
+
+
+.color-picker {
+    margin: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+
+.color-select {
+    width: 200px;
+    padding: 5px 30px 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    appearance: none;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 8px center/15px 15px;
+}
+
+
+.color-preview {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    margin-left: 5px;
 }
