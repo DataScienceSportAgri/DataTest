@@ -93,6 +93,8 @@ $(function() {
                 success: function(response) {
                     if (response.status === 'success') {
                         console.log('Positions updated successfully');
+                        updateBubbleColors(); // Mise à jour des bulles (fonction existante)
+                        updateBubbleNumbers();
                     } else {
                         console.error('Error updating positions:', response.message);
                     }

@@ -370,6 +370,7 @@ $(function() {
             throttledUpdateOrder.cancel(); // Utilisez la bonne variable
             throttledUpdatePositions.cancel(); // Annule le throttling
             updateOrder();
+
         });
      // Configuration du sortable
         $("#bubble-container").sortable({
