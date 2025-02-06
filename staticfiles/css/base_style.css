@@ -1,0 +1,36 @@
+header {
+    position: relative;
+}
+.login-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+.login-button a {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+/* Ajoutez ici tout autre style CSS que vous souhaitez inclure */
+
+.auth-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.auth-button {
+    padding: 5px 10px;
+    margin-left: 10px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.auth-button:hover {
+    background-color: #0056b3;
+}
+
