@@ -1,4 +1,4 @@
 .idea/
-static/models/mars.glb
-staticfiles/models/mars.glb
-db.sqlite3
+!static/models/mars.glb
+!staticfiles/models/mars.glb
+!db.sqlite3

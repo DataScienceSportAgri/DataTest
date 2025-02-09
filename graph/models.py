@@ -4,16 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.db import models
 
-class Categorie(models.Model):
-    nom = models.CharField(max_length=10)
-    age = models.CharField(max_length=20, null=True, blank=True)
-    sexe = models.CharField(max_length=10, null=True, blank=True)
-    type = models.CharField(max_length=20, null=True, blank=True)
-    id_categoriesimplifie = models.IntegerField(null=True, blank=True)
-
-    def __str__(self):
-        return self.nom
-
 class CategorieSimplifiee(models.Model):
     nom = models.CharField(max_length=100)
     sexe = models.CharField(max_length=1, choices=[
@@ -32,6 +22,18 @@ class CategorieSimplifiee(models.Model):
     class Meta:
         verbose_name = "Catégorie simplifiée"
         verbose_name_plural = "Catégories simplifiées"
+
+class Categorie(models.Model):
+    nom = models.CharField(max_length=10)
+    age = models.CharField(max_length=20, null=True, blank=True)
+    sexe = models.CharField(max_length=10, null=True, blank=True)
+    type = models.CharField(max_length=20, null=True, blank=True)
+    categoriesimplifiee = models.ForeignKey(CategorieSimplifiee, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.nom
+
+
 
 class Coureur(models.Model):
     nom = models.CharField(max_length=100)
@@ -64,6 +66,7 @@ class ResultatCourse(models.Model):
     temps = models.DurationField(null=True, blank=True)
     temps2 = models.DurationField(null=True, blank=True)
     position = models.IntegerField()
+    categorie = models.ForeignKey(Categorie, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         unique_together = ('coureur', 'course')
