@@ -17,7 +17,7 @@ function updateSeriesCategories() {
     const seriesDivs = document.querySelectorAll('#series_container > div');
 
     seriesDivs.forEach(seriesDiv => {
-        const seriesName = seriesDiv.querySelector('h4').textContent;
+        const seriesName = seriesDiv.querySelector('.titre-serie').value;
         const categoryBoxes = seriesDiv.querySelectorAll('.category-box');
         const categories = {
             sexe: [],
