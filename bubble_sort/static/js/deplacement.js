@@ -14,7 +14,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
-const csrftoken = getCookie('csrftoken');
+const csrftoken = getCookie('csrf_token');
 
 
 var bubbleListUrl = $('#bubble-container').data('bubble-list-url');

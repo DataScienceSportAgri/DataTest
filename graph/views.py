@@ -103,6 +103,19 @@ class CoureurDetailView(DetailView):
 class VitesseDistributionView(TemplateView):
     template_name = 'graph/vitesse_distribution.html'
 
+    def safe_literal_eval(self, data):
+        try:
+            # Essayer d'évaluer directement avec literal_eval
+            return ast.literal_eval(data)
+        except (ValueError, SyntaxError):
+            # Si une erreur survient, nettoyer les guillemets superflus et réessayer
+            try:
+                cleaned_data = data.strip("'\"")  # Supprime les guillemets simples ou doubles
+                return [cleaned_data]  # Remettre dans une liste
+            except Exception as e:
+                # En dernier recours, retourner une liste vide ou une valeur par défaut
+                return ["Course sur route", "Foulee"]
+
     def filter_by_series(self, data, series_categories):
         dataframes_by_series = {}
 
@@ -224,13 +237,32 @@ class VitesseDistributionView(TemplateView):
 
     def get_context_data(self, request=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        mode = self.request.GET.get('mode', 'classique')  # Par défaut : classique
-        if mode == 'classique':
+        mode = 'rien'
+        try:
+            mode = self.request.GET.get('mode')  # Par défaut : classique
+            print('méthode get fonctionnelle :',mode)
+        except:
+            print('méthode get fonctionnelle error')
+        if mode != 'classique' and mode != 'simplifie':
+            try:
+                post_data = json.loads(request.body)
+                mode = post_data.get('mode')
+                print('méthode get non fonctionnelle. Méthode post :', mode)
+            except:
+                mode = 'classique'
+        print('type de mode :',type(mode))
+        if type(mode) is str:
+            if mode == 'simplifie':
+                categories = CategorieSimplifiee.objects.values('nom', 'sexe').distinct()
+            else:
+                mode = 'classique'
+                categories = Categorie.objects.values('nom', 'sexe').distinct()
+        else:
+            mode = 'classique'
             categories = Categorie.objects.values('nom', 'sexe').distinct()
-        elif mode == 'simplifie':
-            categories = CategorieSimplifiee.objects.values('nom', 'sexe').distinct()
         min_distance = 5000
         max_distance = 10000
+        print('mode',mode)
         # Convertir en liste de dictionnaires
         categories_list = [{'nom': cat['nom'], 'sexe': cat['sexe'] or 'Unknown'} for cat in categories]
         type_list = ['Course sur route', 'Foulee']
@@ -245,7 +277,8 @@ class VitesseDistributionView(TemplateView):
 
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
-                    type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    print('typelist',post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
@@ -317,7 +350,7 @@ class VitesseDistributionView(TemplateView):
 
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
-                    type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []},
@@ -417,6 +450,7 @@ class VitesseDistributionView(TemplateView):
         context['stats'] = stats
         context['series_categories'] = series_categories
         context['categories'] = json.dumps(categories_list)
+        context['mode'] = mode
 
         return context
 
@@ -429,19 +463,22 @@ class VitesseDistributionView(TemplateView):
 
     def get_updated_data(self, request):
         print("Received update request from client")
+        print('request.method', request.method)
         if request.method == 'POST':
             mode = self.request.session['mode']
+            print('mode',mode)
             if mode == 'classique':
                 try:
+                    print('test')
                     vitesses = self.request.session.get('vitesses')
                     distances = self.request.session.get('distances')
                     loaded_ids = set(request.session.get('loaded_ids', []))
                     post_data = json.loads(request.body)
-
+                    print('post_data',post_data)
                     min_distance = int(post_data.get('minDistance', 5000))
                     max_distance = int(post_data.get('maxDistance', 10000))
                     loaded_count = int(post_data.get('loaded_count', 0))
-                    type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
@@ -520,6 +557,7 @@ class VitesseDistributionView(TemplateView):
                 df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
 
             elif mode == 'simplifie':
+                print('test')
                 try:
                     vitesses = self.request.session.get('vitesses')
                     distances = self.request.session.get('distances')
@@ -529,7 +567,7 @@ class VitesseDistributionView(TemplateView):
                     min_distance = int(post_data.get('minDistance', 5000))
                     max_distance = int(post_data.get('maxDistance', 10000))
                     loaded_count = int(post_data.get('loaded_count', 0))
-                    type_list = ast.literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
@@ -537,6 +575,8 @@ class VitesseDistributionView(TemplateView):
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
                 course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
                 selected_categories = request.GET.getlist('categories')
+                print('selected categories',selected_categories)
+                print('selected categories', series_categories)
                 total_count = ResultatCourse.objects.filter(
                     Q(course__type__in=course_type_ids) &
                     Q(course__distance__gte=min_distance) &
@@ -554,31 +594,42 @@ class VitesseDistributionView(TemplateView):
                 remaining_count = min(1000, total_count - len(still_valid_ids))
 
                 new_results = ResultatCourse.objects.filter(
-                    Q(id__in=still_valid_ids) &
                     Q(course__type__in=course_type_ids) &
                     Q(course__distance__gte=min_distance) &
                     Q(course__distance__lte=max_distance) &
-                    Q(categorie__categoriesimplifiee__isnull=False)
+                    Q(categorie__categoriesimplifiee__isnull=False)).exclude(id__in=still_valid_ids).annotate(
+                        distance_course=F('course__distance')
                 ).values(
                     'id',
-                    'categorie__categoriesimplifiee__sexe',
-                    'categorie__categoriesimplifiee__nom',
                     'temps',
-                    'course__distance',
+                    'categorie__categoriesimplifiee__sexe',
+                    'distance_course',
+                    'categorie__categoriesimplifiee__nom',
                     'course__type'
                 ).order_by('?')[:remaining_count]  # Optimise les jointures pour éviter plusieurs requêtes
                 # Conversion en DataFrame
                 results_df = pd.DataFrame(list(new_results))
+                print('resultsdf',results_df)
+                # Créer un DataFrame pour still_valid_ids
+                still_valid_results = ResultatCourse.objects.filter(id__in=still_valid_ids).annotate(
+                    distance_course=F('course__distance')
+                ).values('id', 'temps',  'categorie__categoriesimplifiee__sexe', 'distance_course', 'categorie__categoriesimplifiee__nom', 'course__type')
 
-                results_df['vitesse'] = results_df['course__distance'] / results_df['temps'].dt.total_seconds() * 3.6
+                still_valid_df = pd.DataFrame(list(still_valid_results))
+                print('len de still valid df', len(still_valid_df))
+                combined_df = pd.concat([results_df, still_valid_df], keys=['new', 'still_valid'], ignore_index=False)
+                combined_df = combined_df.reset_index(level=0).rename(columns={'level_0': 'source'})
 
-                df = results_df[['id', 'vitesse', 'course__distance', 'categorie__categoriesimplifiee__sexe', 'categorie__categoriesimplifiee__nom']]
+                combined_df['vitesse'] = combined_df['distance_course'] / combined_df['temps'].dt.total_seconds() * 3.6
+                print('len de combined df', len(combined_df))
+                df = combined_df[['id', 'vitesse', 'distance_course', 'categorie__categoriesimplifiee__sexe', 'categorie__categoriesimplifiee__nom']]
                 df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
             else:
                 print('mode non reconnu', mode)
                 return 'error'
             # Utilisation des fonctions
             filtered_dataframes = self.filter_by_series(df, series_categories)
+            print('filtered_dataframes',filtered_dataframes)
             stats = self.calculate_stats(filtered_dataframes)
             print('stats_updated',stats)
 

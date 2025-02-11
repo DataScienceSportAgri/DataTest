@@ -46,26 +46,36 @@ window.isRefreshing = true;
   // Récupérer le jeton CSRF
   let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
   if (!csrftoken) {
-    csrftoken = getCookie('csrftoken');
+    csrftoken = getCookie('csrf_token');
   }
 
   if (!csrftoken) {
     console.error('CSRF token not found. Request may fail.');
   }
 
+  console.log('window.chartConfig', chartConfig)
+
+
+  var selectedCourseTypes = Array.isArray(chartConfig.typeList)
+      ? window.chartConfig.typeList
+      : [window.chartConfig.typeList];
+
+  console.log('Types de courses sélectionnés:', selectedCourseTypes);
   // Préparer les données à envoyer
   const data = {
     action: 'update',
-    seriesCategories: window.chartConfig.seriesCategories || {},
-    minDistance: window.chartConfig.minDistance,
-    maxDistance: window.chartConfig.maxDistance,
-    course_types: window.chartConfig.type_list,
-    loaded_count: window.chartConfig.loadedCount
+    seriesCategories: chartConfig.seriesCategories || {},
+    minDistance: chartConfig.minDistance,
+    maxDistance: chartConfig.maxDistance,
+    course_types: chartConfig.typeList,
+    loaded_count: chartConfig.loadedCount
   };
   console.log('nouvelles données envoyées au serveur', data)
 
   // Convertir l'objet en chaîne JSON
   const jsonData = JSON.stringify(data);
+
+  console.log('après filtration', jsonData)
 
   // Effectuer la requête POST
   return fetch('/graph/vitesse-distribution/', {
