@@ -104,13 +104,15 @@ class VitesseDistributionView(TemplateView):
     template_name = 'graph/vitesse_distribution.html'
 
     def safe_literal_eval(self, data):
+        if isinstance(data, list):
+            return data
         try:
             # Essayer d'évaluer directement avec literal_eval
             return ast.literal_eval(data)
         except (ValueError, SyntaxError):
             # Si une erreur survient, nettoyer les guillemets superflus et réessayer
             try:
-                cleaned_data = data.strip("'\"")  # Supprime les guillemets simples ou doubles
+                cleaned_data = data.strip("'\"[]")  # Supprime les guillemets simples ou doubles
                 return [cleaned_data]  # Remettre dans une liste
             except Exception as e:
                 # En dernier recours, retourner une liste vide ou une valeur par défaut
@@ -277,7 +279,7 @@ class VitesseDistributionView(TemplateView):
 
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
-                    print('typelist',post_data.get("course_types", "['Course sur route', 'Foulee']"))
+                    print('typelist',post_data.get("course_types", "['Course sur route', 'Foulee']"), type(post_data.get("course_types", "['Course sur route', 'Foulee']")))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
@@ -446,6 +448,7 @@ class VitesseDistributionView(TemplateView):
         context['min_distance'] = min_distance
         context['max_distance'] = max_distance
         context['refresh_interval'] = 25000
+        context['type_list'] = type_list
         print('stats',stats)
         context['stats'] = stats
         context['series_categories'] = series_categories
