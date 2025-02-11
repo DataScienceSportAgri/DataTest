@@ -14,6 +14,7 @@
         {{ categories|default:"['F','M']"|json_script:"categories" }}
             {{ series_categories|json_script:"series_categories" }}
     {{ is_update|default:False|json_script:"is_update" }}
+    {{ mode|default:'classique'|json_script:"mode" }}
 <div style="display: none;">
     <span id="refresh_interval">{{ refresh_interval|default:"25000" }}</span>
     <span id="total_count">{{ total_count|default:"0" }}</span>
@@ -24,6 +25,7 @@
         <span id="categories">{{ type_list|default:"['F', 'M']"|safe}}</span>
             <span id="series_categories">{{ type_list|safe}}</span>
     <span id="stats">{{ stats|default:"[]"|safe}}</span>
+    <span id="mode">{{ mode|default:"classique"}}</span>
 </div>
 <script>
 window.isRefreshing = false;
@@ -70,38 +72,7 @@ window.isRefreshing = false;
 
         <script src="{% static 'js/dragAndDrop.js' %}"></script>
 <script src="{% static 'js/createDeleteSeries.js' %}"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const checkboxes = document.querySelectorAll('#course-types input[type="checkbox"]');
-      const fouleeCheckbox = document.querySelector('input[value="Foulée"]');
-      const routeCheckbox = document.querySelector('input[value="Course sur route"]');
-
-      checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-          const checkedBoxes = document.querySelectorAll('#course-types input[type="checkbox"]:checked');
-
-          if (checkedBoxes.length > 2) {
-            this.checked = false;
-          } else if (checkedBoxes.length === 2) {
-            if (!(fouleeCheckbox.checked && routeCheckbox.checked)) {
-              this.checked = false;
-            }
-          }
-
-          checkboxes.forEach(cb => {
-            if (cb !== fouleeCheckbox && cb !== routeCheckbox) {
-              cb.disabled = fouleeCheckbox.checked && routeCheckbox.checked;
-            }
-          });
-          // Mettre à jour chartConfig.typeList
-          window.chartConfig.typeList = Array.from(document.querySelectorAll('#course-types input[type="checkbox"]:checked')).map(cb => cb.value);
-        });
-      });
-    });
-
-</script>
-
+<script src="{% static 'js/courseTypes.js' %}"></script>
 <script src="{% static 'plotly.js-dist/plotly.js' %}"></script>
       <script src="{% static 'js/updateCountdown.js' %}"></script>
         <script src="{% static 'js/updateStats.js' %}"></script>
@@ -161,25 +132,33 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-const observer = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
-    // Extraire les données du DOM
-      const loadedCountElement = document.getElementById('loaded-count');
-      const totalCountElement = document.getElementById('total-count');
-      const refreshIntervalElement = document.getElementById('refresh-interval');
-      const typeListElement = document.getElementById('type-list');
+document.addEventListener('DOMContentLoaded', function () {
+    const seriesContainer = document.getElementById('series_container');
 
-      // Mettre à jour window.chartConfig
-      window.chartConfig = {
-        loadedCount: loadedCountElement ? parseInt(loadedCountElement.textContent) : 0,
-        totalCount: totalCountElement ? parseInt(totalCountElement.textContent) : 0,
-        refreshInterval: refreshIntervalElement ? parseInt(refreshIntervalElement.textContent) : 0,
-        typeList: typeListElement ? JSON.parse(typeListElement.textContent) : [],
-        seriesCategories: updateSeriesCategories('series_categories')
-      };
+    // Vérifiez que l'élément existe
+    if (!seriesContainer) {
+        console.error("L'élément #series_container est introuvable.");
+        return;
+    }
 
-      console.log('window.chartConfig:', window.chartConfig);
-  });
+    // Configurez le MutationObserver
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList') {
+                console.log('Mutation détectée : ajout ou suppression d\'enfants');
+                window.chartConfig.seriesCategories = updateSeriesCategories();
+                console.log('Mise à jour de window.chartConfig:', window.chartConfig);
+            }
+        });
+    });
+
+    // Commencez à observer le conteneur
+    observer.observe(seriesContainer, {
+        childList: true, // Surveille les ajouts/suppressions d'enfants
+        subtree: true,   // Surveille également les descendants
+    });
+
+    console.log("MutationObserver attaché à #series_container");
 });
 </script>
     <script>
@@ -199,6 +178,7 @@ const observer = new MutationObserver((mutations) => {
 }
 
     </script>
+{% csrf_token %}
 <script>
 document.getElementById('submit-filter').addEventListener('click', function() {
     console.log('Bouton submit-filter cliqué');
@@ -207,16 +187,13 @@ document.getElementById('submit-filter').addEventListener('click', function() {
     var values = slider.noUiSlider.get();
     var minDistance = parseFloat(values[0]) * 1000;
     var maxDistance = parseFloat(values[1]) * 1000;
-    var selectcategories = window.chartConfig.seriesCategories;
+    var selectcategories = updateSeriesCategories('series_categories');
     window.chartConfig.minDistance = minDistance;
     window.chartConfig.maxDistance = maxDistance;
-
+    var type_list = window.chartConfig.typeList
     console.log('Valeurs du slider:', minDistance, maxDistance);
     console.log('Catégories sélectionnées:', selectcategories);
 
-    var typeList = Array.isArray(window.chartConfig.typeList)
-        ? window.chartConfig.typeList
-        : [window.chartConfig.typeList];
 
     var selectedCourseTypes = Array.isArray(window.chartConfig.typeList)
         ? window.chartConfig.typeList
@@ -227,9 +204,10 @@ document.getElementById('submit-filter').addEventListener('click', function() {
     var postData = {
         min_distance: minDistance,
         max_distance: maxDistance,
-        course_types: selectedCourseTypes.join(','),
+        course_types: type_list,
         action: 'submit',
-        seriesCategories: window.chartConfig.seriesCategories || {}
+        seriesCategories: selectcategories || {},
+        mode: window.chartConfig.mode
     };
 
     console.log('Données à envoyer:', postData);
@@ -240,7 +218,7 @@ document.getElementById('submit-filter').addEventListener('click', function() {
     // Récupérer le jeton CSRF
     let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
     if (!csrftoken) {
-        csrftoken = getCookie('csrftoken');
+        csrftoken = getCookie('csrf_token');
     }
 
     if (!csrftoken) {
@@ -268,14 +246,6 @@ document.getElementById('submit-filter').addEventListener('click', function() {
         resetContainer();
         document.getElementById('global').innerHTML = data.html;
 
-      // Exécuter les scripts inclus dans le HTML
-      const scripts = document.getElementById('chart-container').querySelectorAll('script');
-      scripts.forEach(script => {
-        const newScript = document.createElement('script');
-        newScript.textContent = script.textContent;
-        document.body.appendChild(newScript);
-      });
-
       // Extraire les données du DOM
       const loadedCountElement = document.getElementById('loaded-count');
       const totalCountElement = document.getElementById('total-count');
@@ -292,20 +262,32 @@ document.getElementById('submit-filter').addEventListener('click', function() {
         }
 
 
-      console.log('window.chartConfig:', window.chartConfig);
+      console.log('window.chartConfig:' + window.chartConfig);
 
-      // Relancer le compte à rebours
+
+      // Obtenir l'élément de compte à rebours
       const countdownElement = document.getElementById('countdown');
-      if (countdownElement) {
-        countdownElement.innerHTML = '';
-        updateCountdown({
-          countdown: Math.floor(window.chartConfig.refreshInterval / 1000),
-          message: "Prochaine mise à jour dans {seconds} secondes"
-        }, countdownElement, postUpdates);
+
+
+                  // Exécuter les scripts inclus dans le HTML
+      const scripts = document.getElementById('chart-container').querySelectorAll('script');
+      scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        newScript.textContent = script.textContent;
+        document.body.appendChild(newScript);
+      });
+
+      var refreshTime  = window.chartConfig.refreshInterval
+      console.log('window.chartConfig.refreshInterval',Math.floor(refreshTime / 1000))
+      // Relancer le compte à rebours à partir de zéro
+      updateCountdown({
+        countdown: Math.floor(refreshTime / 1000),
+        message: "Prochaine mise à jour dans {seconds} secondes"
+      }, countdownElement, postUpdates);  // Ajouter postUpdates comme callback
+      } else {
+        console.error('Unexpected response format');
       }
-    } else {
-      console.error('Unexpected response format');
-    }
+
   })
   .catch(error => {
     console.error('Erreur:', error);

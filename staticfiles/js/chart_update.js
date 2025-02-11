@@ -46,7 +46,7 @@ window.isRefreshing = true;
   // Récupérer le jeton CSRF
   let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
   if (!csrftoken) {
-    csrftoken = getCookie('csrftoken');
+    csrftoken = getCookie('csrf_token');
   }
 
   if (!csrftoken) {
