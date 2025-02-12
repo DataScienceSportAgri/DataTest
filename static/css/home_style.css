@@ -47,15 +47,14 @@ main {
 }
 
 .rocket-container {
-    position:relative;
+    position: relative;
     top: 10%;
     left: 20px;
-    width: 120px;
-    height: 600px;
-        display: flex;
-    flex-direction: row;/* Augmenté pour accommoder tous les éléments */
+    width: 120px; /* Largeur fixe de la fusée */
+    height: 600px; /* Hauteur fixe de la fusée */
+    display: flex;
+    flex-direction: column; /* Organise les enfants verticalement */
 }
-
 
 /* Conteneur des étages */
 .stages-container {
@@ -86,21 +85,13 @@ main {
 }
 
 /* Conteneur du nez */
-.nose-container {
-    width: 100%;
-    bottom: 70%;
-    height: 100%; /* Ajuste la hauteur automatiquement */
-        display: flex;
-    flex-direction: row;
-}
 
-/* Pointe de la fusée */
 .nose {
-    bottom:0;
-    height:98%;
-    left: 30%;
+    position: absolute;
+    bottom: 70%;
+    left: 27.5%; /* (100% - 45%) / 2 pour centrer */
     width: 45%;
-    /* autres propriétés inchangées */
+    height: 30%; /* Occupe les 70% supérieurs */
     background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff);
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
     box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
@@ -122,15 +113,15 @@ main {
 
 /* Étape 1 : Base de la fusée */
 .stage1 {
-    height: 40%;
-    bottom: 0;
+    height: 22.5%;
+    bottom: 10%;
     background: linear-gradient(to right, #4d4d4d, #8c8c8c 50%, #d6d6d6); /* Dégradé métallique plus sombre */
 }
 
 /* Étape 2 : Milieu de la fusée */
 .stage2 {
-    height: 30%;
-    bottom: 40%;
+    height: 20%;
+    bottom: 32.5%;
     width: 80%;
     left: 10%;
     background: linear-gradient(to right, #6e6e6e, #a9a9a9 50%, #e6e6e6); /* Dégradé métallique intermédiaire */
@@ -138,8 +129,8 @@ main {
 
 /* Étape 3 : Haut de la fusée */
 .stage3 {
-    height: 20%;
-    bottom: 70%;
+    height: 17.5%;
+    bottom: 52.5%;
     width: 60%;
     left: 20%;
     background: linear-gradient(to right, #8c8c8c, #bdbdbd 50%, #f2f2f2); /* Dégradé métallique plus clair pour le sommet */
@@ -242,83 +233,67 @@ main {
 .blue { background-color: blue; }
 .yellow { background-color: yellow; }
 
-/* Conteneur du booster */
-.booster-container {
-    position:relative;
-    width: 100%;
-    bottom: 0;
-    height: 10%; /* Ajuste la hauteur automatiquement */
-}
-
-/* Booster global */
 .booster {
-    position:relative;
-    width: 120%;
+    position: absolute;
+    bottom: 0; /* Aligne le booster au bas du conteneur parent */
+    left: 0;
+    width: 100%; /* Prend toute la largeur du parent */
+    height: 10%; /* Occupe 10% de la hauteur du parent */
 }
 
-/* Conteneur des lames */
 .blades {
-        display: flex;
-    flex-direction: column;
-    justify-content: center; /* changed to center */
-    align-items: center;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    height: 100%; /* Hauteur des lames */
-    overflow: visible; /* Permet aux lames d'apparaître autour */
-}
-
-/* Style des lames métalliques */
-.blade {
-    bottom: 0;
-    width: 8%; /* Largeur d'une lame individuelle */
-    height: 100%;
-    background: linear-gradient(to right, #4d4d4d, #b0b0b0, #ffffff); /* Lumière venant de droite */
-    border-radius: 0.5%; /* Coins légèrement arrondis pour un effet cylindrique */
-    transform-origin: bottom center; /* Point d'origine pour la rotation */
-}
-
-/* Lames visibles (avant) */
-.blade:nth-child(1) { transform: rotate(-40deg); left: 5%; z-index: 2; }
-.blade:nth-child(2) { transform: rotate(-30deg); left: 15%; z-index: 3; }
-.blade:nth-child(3) { transform: rotate(-20deg); left: 25%; z-index: 4; }
-.blade:nth-child(4) { transform: rotate(-10deg); left: 35%; z-index: 5; }
-.blade:nth-child(5) { transform: rotate(0deg); left: 45%; z-index: 6; }
-.blade:nth-child(6) { transform: rotate(10deg); left: 55%; z-index: 5; }
-.blade:nth-child(7) { transform: rotate(20deg); left: 65%; z-index: 4; }
-.blade:nth-child(8) { transform: rotate(30deg); left: 75%; z-index: 3; }
-.blade:nth-child(9) { transform: rotate(40deg); left: 85%; z-index: 2; }
-
-/* Lames cachées (arrière, plus claires et partiellement visibles derrière la flamme) */
-.blade:nth-child(10),
-.blade:nth-child(11),
-.blade:nth-child(12),
-.blade:nth-child(13),
-.blade:nth-child(14) {
-    opacity: 0.5; /* Plus transparentes pour simuler la distance */
-    background: linear-gradient(to right, #666666, #a9a9a9, #d6d6d6); /* Plus claires à cause de la lumière diffuse et du feu */
-    z-index: 1; /* Derrière les autres lames */
+    position: relative;
+    width: 100%; /* Prend toute la largeur du booster */
+    height: 100%; /* Prend toute la hauteur du booster */
+    display: flex;
+    justify-content: space-around; /* Espace égal entre les lames */
+    align-items: flex-end; /* Aligne les lames au bas du booster */
 }
 :root {
-    --angle: 5deg; /* Example default value */
-    --delay: 0.5s; /* Example default value */
+    --radius: 20px; /* Contrôle du rayon des coins arrondis */
 }
-/* Animation légère pour les lames (balancement) */
-@keyframes sway {
-    from { transform-origin: bottom center; transform: translateY(0%) rotate(calc(var(--angle, 0deg))); }
-    to { transform-origin: bottom center; transform: translateY(-0.5%) rotate(calc(var(--angle, 0deg))); }
-}
+/* Lames métalliques */
 .blade {
-    animation-name: sway;
-    animation-duration: calc(2s + var(--delay, .2s));
+    position: absolute; /* Nécessaire pour utiliser `left` */
+    bottom: 0; /* Aligne les lames au bas du conteneur */
+    width: 17%; /* Largeur relative au conteneur des lames */
+    height: 97%; /* Prend toute la hauteur du conteneur des lames */
+    background: linear-gradient(to right, #4d4d4d, #b0b0b0, #ffffff);
+    border-radius: 0.2%;
+    transform-origin: bottom center; /* Point d'origine pour la rotation */
+     aspect-ratio: 1; /* Maintient un ratio pour un triangle équilatéral */
+    clip-path: polygon(
+        50% 0%,       /* Pointe supérieure */
+        calc(100% - var(--radius)) calc(100% - var(--radius)), /* Coin inférieur droit arrondi */
+        var(--radius) calc(100% - var(--radius)),             /* Coin inférieur gauche arrondi */
+        50% 0%        /* Retour à la pointe supérieure */
+    );
+    mask: radial-gradient(var(--radius), #000 98%, transparent 101%) space no-repeat,
+          conic-gradient(from -30deg at 50% calc(200% - 3*var(--radius)/2), #000 60deg, transparent 0);
+    mask-composite: intersect;
+    mask-size: cover;
+    background-clip: content-box;
 }
 
-/* Flamme centrale */
+/* Positionnement des lames visibles avec rotation et décalage horizontal */
+.blade:nth-child(3) { transform: rotate(20deg); left: 5%; }
+.blade:nth-child(4) { transform: rotate(10deg); left: 15%; }
+.blade:nth-child(5) { transform: rotate(0deg); left: 50%; } /* Centre */
+.blade:nth-child(6) { transform: rotate(-10deg); left: 85%; }
+.blade:nth-child(7) { transform: rotate(-20deg); left: 95%; }
+
 .center-flame {
-    position: relative;
-    bottom: -10%; /* Positionnement légèrement au-dessus des lames */
+    position: absolute;
+    bottom: 0; /* Alignée au bas du booster */
     left: 50%;
-    transform-origin: center
+    transform: translateX(-50%);
+    width: 20%; /* Largeur relative au booster */
+    height: 100%; /* Prend toute la hauteur du booster */
+    background: radial-gradient(circle, rgba(255,165,0,1) 0%, rgba(255,69,0,1) 70%, rgba(255,0,0,0.5) 100%);
 }
+
+
+
+
+
+

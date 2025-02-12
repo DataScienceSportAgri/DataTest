@@ -18,7 +18,20 @@
   <h1>Bienvenue sur mon projet personnel</h1>
     
     <div class="rocket-container">
-
+<div class="booster">
+        <div class="blades">
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+            <div class="blade"></div>
+        </div>
+        <div class="center-flame"></div>
+    </div>
     <!-- Conteneur des étages -->
     <div class="stages-container">
         <a href="/agri" class="stage-button stage1 gray-1">
@@ -59,21 +72,10 @@
             </div>
         </a>
     </div>
-            <!-- Conteneur du nez -->
-    <div class="nose-container">
-        <div class="nose"></div>
-    </div>
 
-    <!-- Conteneur du booster -->
-    <div class="booster-container">
-        <div class="booster">
-            <div class="blades">
-                {% for i in "1234567890" %} <!-- Générer les lames -->
-                <div class="blade"></div>
-                {% endfor %}
-            </div>
-            <div class="center-flame"></div>
-        </div>
-    </div>
+        <div class="nose"></div>
+
+
+
     </div>
 {% endblock %}

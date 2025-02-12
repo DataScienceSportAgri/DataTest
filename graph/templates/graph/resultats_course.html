@@ -4,6 +4,7 @@
 
 {% block content %}
     <h1>Résultats de la course : {{ course.nom_marsien }} ({{ course.annee }})</h1>
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% if resultats_list %}
         <div class="course-list">
     <div class="course-row course-header">
