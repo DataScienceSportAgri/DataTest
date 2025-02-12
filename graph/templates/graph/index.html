@@ -6,6 +6,17 @@
 <h1>Liste des courses</h1>
 <a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
 <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+        <form method="get" action="{% url 'graph:search_results' %}">
+    <div>
+        <label for="search_course">Rechercher par nom de course :</label>
+        <input type="text" id="search_course" name="search_course" placeholder="Nom de la course">
+    </div>
+    <div>
+        <label for="search_coureur">Rechercher par nom de coureur :</label>
+        <input type="text" id="search_coureur" name="search_coureur" placeholder="Nom du coureur">
+    </div>
+    <button type="submit">Rechercher</button>
+</form>
 {% if nom_list %}
     <div class="course-list">
         <div class="course-row course-header">
