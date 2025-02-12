@@ -18,13 +18,23 @@ main {
     box-sizing: border-box;
 }
 
-footer {
+
+/* Style pour le fond étoilé */
+.star-background {
+    background: #000;
+    background-image:
+        radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+        radial-gradient(4px 4px at 40px 70px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 140px 200px, #eee, rgba(0,0,0,0)),
+        radial-gradient(3px 3px at 250px 180px, #fff, rgba(0,0,0,0)),
+        radial-gradient(4px 4px at 300px 90px, #fff, rgba(0,0,0,0));
+    background-size: 400px 400px;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding: 10px;
-    background-color: #f0f0f0;
-    text-align: center;
-    position: relative;
-    clear: both; /* Force le footer sous tout le contenu */
+    height: 100%;
+    z-index: -2; /* Sous planet-foreground */
 }
 
 #planet-foreground {
@@ -34,4 +44,281 @@ footer {
     width: 100%;
     height: 100%;
     z-index: -1;
+}
+
+.rocket-container {
+    position:relative;
+    top: 10%;
+    left: 20px;
+    width: 120px;
+    height: 600px;
+        display: flex;
+    flex-direction: row;/* Augmenté pour accommoder tous les éléments */
+}
+
+
+/* Conteneur des étages */
+.stages-container {
+    width: 100%;
+    bottom: 10%;
+    height: 70%; /* Ajuste la hauteur automatiquement */
+    display: flex;
+    flex-direction: row;
+}
+
+.stage-button {
+    position: absolute;
+    width: 100%;
+    border: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+    border-radius: 10px; /* Bords arrondis */
+    display: flex; /* Pour centrer les icônes horizontalement */
+    justify-content: center;
+}
+
+.stage-button:hover {
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+/* Conteneur du nez */
+.nose-container {
+    width: 100%;
+    bottom: 70%;
+    height: 100%; /* Ajuste la hauteur automatiquement */
+        display: flex;
+    flex-direction: row;
+}
+
+/* Pointe de la fusée */
+.nose {
+    bottom:0;
+    height:98%;
+    left: 30%;
+    width: 45%;
+    /* autres propriétés inchangées */
+    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
+                inset 5px 5px 10px rgba(255, 255, 255, 0.2),
+                -5px -5px 10px rgba(0, 0, 0, 0.3),
+                5px 5px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Styles communs pour tous les étages */
+.stage1, .stage2, .stage3 {
+    align-items: center;
+    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff); /* Lumière venant de droite */
+    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5), /* Ombre interne gauche */
+                inset 5px 5px 10px rgba(255, 255, 255, 0.3), /* Lumière interne droite */
+                -5px -5px 10px rgba(0, 0, 0, 0.2), /* Ombre externe gauche */
+                5px 5px 10px rgba(255, 255, 255, 0.2); /* Lumière externe droite */
+    border-radius: 8px; /* Coins légèrement arrondis pour un effet cylindrique */
+}
+
+/* Étape 1 : Base de la fusée */
+.stage1 {
+    height: 40%;
+    bottom: 0;
+    background: linear-gradient(to right, #4d4d4d, #8c8c8c 50%, #d6d6d6); /* Dégradé métallique plus sombre */
+}
+
+/* Étape 2 : Milieu de la fusée */
+.stage2 {
+    height: 30%;
+    bottom: 40%;
+    width: 80%;
+    left: 10%;
+    background: linear-gradient(to right, #6e6e6e, #a9a9a9 50%, #e6e6e6); /* Dégradé métallique intermédiaire */
+}
+
+/* Étape 3 : Haut de la fusée */
+.stage3 {
+    height: 20%;
+    bottom: 70%;
+    width: 60%;
+    left: 20%;
+    background: linear-gradient(to right, #8c8c8c, #bdbdbd 50%, #f2f2f2); /* Dégradé métallique plus clair pour le sommet */
+}
+
+/* Conteneur principal pour les champs et le satellite */
+.fields-container {
+    width: 70%; /* Occupe toute la largeur de stage1 */
+    height: 45%; /* Occupe toute la hauteur de stage1 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: rotate(-10deg); /* Angle global pour diagonalisation */
+}
+
+/* Champs stylisés */
+.fields {
+    overflow: hidden;
+}
+
+/* Champ vert */
+.field1 {
+    position: relative;
+    top: 20%; /* Positionnement vertical dans fields-container */
+    left: 10%; /* Positionnement horizontal dans fields-container */
+    width: 10%; /* Largeur du champ */
+    height: 10%; /* Hauteur du champ */
+    transform-origin: bottom right; /* Pivot en bas à droite */
+}
+
+/* Champ jaune */
+.field2 {
+    position:relative;
+    top: 35%; /* Placé juste en dessous du champ vert */
+    left: 25%; /* Alignement par le coin supérieur droit du champ vert */
+    width: 10%; /* Largeur du champ */
+    height: 10%; /* Hauteur du champ */
+}
+
+/* Stries verticales dans les champs verts et jaunes */
+.field1 .stripe,
+.field2 .stripe {
+    width: 5%; /* Largeur des stries ajustée pour plus de finesse */
+}
+
+/* Satellite positionné au-dessus des champs */
+.satellite {
+    top: -20%; /* Positionnement au-dessus des champs */
+    right: -20%; /* Positionnement à droite des champs */
+    font-size: 1.5em;
+}
+
+
+
+
+/* Effet de jonction entre le nez et l'étage supérieur */
+.stage3::after {
+    content: '';
+    bottom: 110%; /* Placement sous le nez pour masquer la jonction */
+    left: calc(50% - 20px); /* Alignement avec le nez */
+    width: 40px;
+    background: linear-gradient(to right, #4d4d4d, #8c8c8c); /* Dégradé pour simuler une jonction métallique sombre */
+    border-radius: 50%; /* Arrondi pour une transition fluide entre le nez et l'étage supérieur */
+}
+
+.icons {
+    width: 70%;
+    height: 70%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* changed to center */
+    align-items: center;
+    color: rgba(0,0,0,.8); /* pour un noir plus prononcé */
+    font-size: 1.5em; /* Réduction de la taille des icônes */
+    text-shadow: none; /* Supprimer l'ombre pour ressembler à l'image */
+}
+
+
+/* Style pour le coureur */
+.runner {
+    font-size: 1.5em;
+    margin-top: 5px;
+}
+
+.bubbles {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+}
+
+.bubble {
+    width: 12px; /* Reduction de la taille des bulles */
+    height: 12px; /* Reduction de la taille des bulles */
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+.red { background-color: red; }
+.green { background-color: green; }
+.blue { background-color: blue; }
+.yellow { background-color: yellow; }
+
+/* Conteneur du booster */
+.booster-container {
+    position:relative;
+    width: 100%;
+    bottom: 0;
+    height: 10%; /* Ajuste la hauteur automatiquement */
+}
+
+/* Booster global */
+.booster {
+    position:relative;
+    width: 120%;
+}
+
+/* Conteneur des lames */
+.blades {
+        display: flex;
+    flex-direction: column;
+    justify-content: center; /* changed to center */
+    align-items: center;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%; /* Hauteur des lames */
+    overflow: visible; /* Permet aux lames d'apparaître autour */
+}
+
+/* Style des lames métalliques */
+.blade {
+    bottom: 0;
+    width: 8%; /* Largeur d'une lame individuelle */
+    height: 100%;
+    background: linear-gradient(to right, #4d4d4d, #b0b0b0, #ffffff); /* Lumière venant de droite */
+    border-radius: 0.5%; /* Coins légèrement arrondis pour un effet cylindrique */
+    transform-origin: bottom center; /* Point d'origine pour la rotation */
+}
+
+/* Lames visibles (avant) */
+.blade:nth-child(1) { transform: rotate(-40deg); left: 5%; z-index: 2; }
+.blade:nth-child(2) { transform: rotate(-30deg); left: 15%; z-index: 3; }
+.blade:nth-child(3) { transform: rotate(-20deg); left: 25%; z-index: 4; }
+.blade:nth-child(4) { transform: rotate(-10deg); left: 35%; z-index: 5; }
+.blade:nth-child(5) { transform: rotate(0deg); left: 45%; z-index: 6; }
+.blade:nth-child(6) { transform: rotate(10deg); left: 55%; z-index: 5; }
+.blade:nth-child(7) { transform: rotate(20deg); left: 65%; z-index: 4; }
+.blade:nth-child(8) { transform: rotate(30deg); left: 75%; z-index: 3; }
+.blade:nth-child(9) { transform: rotate(40deg); left: 85%; z-index: 2; }
+
+/* Lames cachées (arrière, plus claires et partiellement visibles derrière la flamme) */
+.blade:nth-child(10),
+.blade:nth-child(11),
+.blade:nth-child(12),
+.blade:nth-child(13),
+.blade:nth-child(14) {
+    opacity: 0.5; /* Plus transparentes pour simuler la distance */
+    background: linear-gradient(to right, #666666, #a9a9a9, #d6d6d6); /* Plus claires à cause de la lumière diffuse et du feu */
+    z-index: 1; /* Derrière les autres lames */
+}
+:root {
+    --angle: 5deg; /* Example default value */
+    --delay: 0.5s; /* Example default value */
+}
+/* Animation légère pour les lames (balancement) */
+@keyframes sway {
+    from { transform-origin: bottom center; transform: translateY(0%) rotate(calc(var(--angle, 0deg))); }
+    to { transform-origin: bottom center; transform: translateY(-0.5%) rotate(calc(var(--angle, 0deg))); }
+}
+.blade {
+    animation-name: sway;
+    animation-duration: calc(2s + var(--delay, .2s));
+}
+
+/* Flamme centrale */
+.center-flame {
+    position: relative;
+    bottom: -10%; /* Positionnement légèrement au-dessus des lames */
+    left: 50%;
+    transform-origin: center
 }
