@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Résultats de la recherche</h1>
+
+    <!-- Formulaire pour affiner ou relancer une recherche -->
+    <form method="get" action="{% url 'graph:search_results' %}">
+        <div>
+            <label for="search_course">Rechercher par nom de course :</label>
+            <input type="text" id="search_course" name="search_course" value="{{ search_course }}">
+        </div>
+        <div>
+            <label for="search_coureur">Rechercher par nom de coureur :</label>
+            <input type="text" id="search_coureur" name="search_coureur" value="{{ search_coureur }}">
+        </div>
+        <button type="submit">Rechercher</button>
+    </form>
+
+    {% if not courses_results and not coureurs_results %}
+        <p>Aucun résultat trouvé.</p>
+    {% else %}
+        <!-- Résultats des courses -->
+        {% if courses_results %}
+            <h2>Courses</h2>
+            <ul>
+                {% for course in courses_results %}
+                    <li>{{ course.nom }} (Marsien : {{ course.nom_marsien }}, Année : {{ course.annee }})</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <!-- Résultats des coureurs -->
+        {% if coureurs_results %}
+            <h2>Coureurs</h2>
+            <ul>
+                {% for coureur in coureurs_results %}
+                    <li>{{ coureur.prenom }} {{ coureur.nom }}
+                        (Marsien : {{ coureur.prenom_marsien }} {{ coureur.nom_marsien }})
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
+
+    <!-- Bouton retour -->
+    <a href="{% url 'graph:index' %}" class="btn btn-secondary">Retour à l'accueil</a>
+{% endblock %}

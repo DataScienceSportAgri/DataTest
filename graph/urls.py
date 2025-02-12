@@ -8,4 +8,5 @@ urlpatterns = [
     path('course/<int:pk>/resultats/', views.ResultatsCourseView.as_view(), name='resultats_course'),
     path(r'vitesse-distribution/', views.VitesseDistributionView.as_view(), name='vitesse_distribution'),
     path('coureur/<int:pk>/', views.CoureurDetailView.as_view(), name='coureur_detail'),
+    path('search/', views.SearchResultsView.as_view(), name='search_results'),
     ]

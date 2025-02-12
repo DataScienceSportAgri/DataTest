@@ -23,6 +23,7 @@ import json
 from django.db.models import F, ExpressionWrapper, DurationField, FloatField
 from django.views.decorators.csrf import csrf_exempt
 import ast
+import re
 
 
 
@@ -31,8 +32,34 @@ class CourseList(generic.ListView):
     context_object_name = 'nom_list'
     paginate_by = 50  # Si vous voulez la pagination
 
+    def normalize_and_split(self, text):
+        """Nettoie le texte en supprimant les chiffres et caractères non alphanumériques, puis le sépare en mots."""
+        # Supprime tous les chiffres
+        text = re.sub(r'\d+', '', text)
+        # Remplace les caractères non alphanumériques par des espaces
+        text = re.sub(r'\W+', ' ', text)
+        # Convertit en minuscule pour une comparaison insensible à la casse
+        text = text.lower()
+        # Sépare en mots
+        return text.split()
+
     def get_queryset(self):
         """Return all finishers, ordered by their finish time."""
+        search_course = self.request.GET.get('search_course', '').strip()
+        search_coureur = self.request.GET.get('search_coureur', '').strip()
+        # Filtrer par nom de course si un terme est fourni
+        if search_course:
+            queryset = queryset.filter(
+                Q(course__nom__iexact=search_course) | Q(course__nom_marsien__iexact=search_course)
+            )
+
+        # Filtrer par nom de coureur si un terme est fourni
+        if search_coureur:
+            queryset = queryset.filter(
+                Q(coureur__nom__iexact=search_coureur) | Q(coureur__prenom__iexact=search_coureur) |
+                Q(coureur__nom_marsien__iexact=search_coureur) | Q(coureur__prenom_marsien__iexact=search_coureur)
+            )
+
         return Course.objects.all().order_by('nom_marsien').distinct()
 
     def get_context_data(self, **kwargs):
@@ -47,8 +74,10 @@ class ResultatsCourseView(generic.ListView):
     context_object_name = 'resultats_list'
     paginate_by = 50
 
+
     def get_queryset(self):
         course_id = self.kwargs['pk']
+
         return ResultatCourse.objects.filter(course_id=course_id).annotate(
             total_seconds=ExpressionWrapper(Cast(F('temps'), FloatField()) / 1000000.0, output_field=FloatField()),
             total_seconds2=ExpressionWrapper(Cast(F('temps2'), FloatField()) / 1000000.0, output_field=FloatField()),
@@ -62,11 +91,60 @@ class ResultatsCourseView(generic.ListView):
             )
         ).order_by('position')
 
+
+
+
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['course'] = Course.objects.get(pk=self.kwargs['pk'])
         return context
 
+
+class SearchResultsView(TemplateView):
+    template_name = 'graph/search_results.html'
+
+    def normalize_and_split(self, text):
+        """Nettoie le texte en supprimant les chiffres et caractères non alphanumériques, puis le sépare en mots."""
+        text = re.sub(r'\d+', '', text)  # Supprime les chiffres
+        text = re.sub(r'\W+', ' ', text)  # Remplace les caractères non alphanumériques par des espaces
+        return text.lower().split()  # Convertit en minuscule et divise en mots
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Récupérer les paramètres GET
+        search_course = self.request.GET.get('search_course', '').strip()
+        search_coureur = self.request.GET.get('search_coureur', '').strip()
+
+        courses_results = Course.objects.none()
+        coureurs_results = Coureur.objects.none()
+
+        if search_course:
+            # Normaliser et diviser la requête en mots
+            normalized_words = self.normalize_and_split(search_course)
+            courses_results = Course.objects.filter(
+                Q(nom__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b') |
+                Q(nom_marsien__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b')
+            )
+
+        if search_coureur:
+            # Normaliser et diviser la requête en mots
+            normalized_words = self.normalize_and_split(search_coureur)
+            coureurs_results = Coureur.objects.filter(
+                Q(nom__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b') |
+                Q(prenom__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b') |
+                Q(nom_marsien__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b') |
+                Q(prenom_marsien__iregex=r'\b(?:' + '|'.join(normalized_words) + r')\b')
+            )
+
+        # Ajouter les résultats au contexte
+        context['courses_results'] = courses_results
+        context['coureurs_results'] = coureurs_results
+        context['search_course'] = search_course  # Pour afficher dans le formulaire
+        context['search_coureur'] = search_coureur  # Pour afficher dans le formulaire
+
+        return context
 
 class CoureurDetailView(DetailView):
     model = Coureur
