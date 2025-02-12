@@ -1,10 +1,12 @@
+let allCategorieDiv; // Déclarée globalement
+
 document.addEventListener('DOMContentLoaded', function() {
     const rawData = document.getElementById('categories').textContent;
-const categoriesData = JSON.parse(JSON.parse(rawData));
+    const categoriesData = JSON.parse(JSON.parse(rawData));
 
-console.log('Double parsed data:', categoriesData);
-console.log('Is array after double parsing:', Array.isArray(categoriesData));
-    const allCategorieDiv = document.getElementById('all_categorie');
+    console.log('Double parsed data:', categoriesData);
+    console.log('Is array after double parsing:', Array.isArray(categoriesData));
+    allCategorieDiv = document.getElementById('all_categorie');
     const selectedCategorieDiv = document.getElementById('categorie_selected');
 
     for (const category of categoriesData) {
