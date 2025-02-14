@@ -1,0 +1,17 @@
+<changelist name="Changes" date="1736626300897" recycled="false">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Changes/shelved.patch" />
+  <option name="DESCRIPTION" value="Changes" />
+  <binary>
+    <option name="BEFORE_PATH" value="db.sqlite3" />
+    <option name="AFTER_PATH" value="db.sqlite3" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Changes/db.sqlite3" />
+  </binary>
+  <binary>
+    <option name="AFTER_PATH" value="static/models/mars.glb" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Changes/mars.glb" />
+  </binary>
+  <binary>
+    <option name="AFTER_PATH" value="staticfiles/models/mars.glb" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Changes/mars1.glb" />
+  </binary>
+</changelist>

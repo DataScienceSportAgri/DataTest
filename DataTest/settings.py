@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'bubble_sort.apps.BubbleSortConfig'
+    'bubble_sort.apps.BubbleSortConfig',
+    'agri.apps.AgriConfig',
 ]
 
 MIDDLEWARE = [

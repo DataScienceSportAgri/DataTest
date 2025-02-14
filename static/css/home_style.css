@@ -47,7 +47,7 @@ main {
 }
 
 .rocket-container {
-    position: relative;
+    position: fixed;
     top: 10%;
     left: 20px;
     width: 120px; /* Largeur fixe de la fusée */
@@ -100,6 +100,33 @@ main {
                 5px 5px 10px rgba(255, 255, 255, 0.1);
 }
 
+.nose-button {
+    position: absolute;
+    bottom: 70%;
+    left: 27.5%;
+    width: 45%;
+    height: 30%;
+    border: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
+                inset 5px 5px 10px rgba(255, 255, 255, 0.2),
+                -5px -5px 10px rgba(0, 0, 0, 0.3),
+                5px 5px 10px rgba(255, 255, 255, 0.1);
+}
+
+.nose-button:hover {
+    transform: scale(1.05);
+    z-index: 1;
+}
 /* Styles communs pour tous les étages */
 .stage1, .stage2, .stage3 {
     align-items: center;
@@ -138,48 +165,79 @@ main {
 
 /* Conteneur principal pour les champs et le satellite */
 .fields-container {
-    width: 70%; /* Occupe toute la largeur de stage1 */
-    height: 45%; /* Occupe toute la hauteur de stage1 */
+    position: absolute;
+    bottom: 17%;
+    width: 45%; /* Occupe toute la largeur de stage1 */
+    height: 35%; /* Occupe toute la hauteur de stage1 */
     display: flex;
     justify-content: center;
     align-items: center;
-    transform: rotate(-10deg); /* Angle global pour diagonalisation */
+    transform: rotate(70deg); /* Angle global pour diagonalisation */
 }
 
 /* Champs stylisés */
 .fields {
+    position: relative;
     overflow: hidden;
 }
 
 /* Champ vert */
 .field1 {
-    position: relative;
-    top: 20%; /* Positionnement vertical dans fields-container */
-    left: 10%; /* Positionnement horizontal dans fields-container */
-    width: 10%; /* Largeur du champ */
-    height: 10%; /* Hauteur du champ */
+    position: absolute;
+    top: 0; /* Positionnement vertical dans fields-container */
+    left: 0; /* Positionnement horizontal dans fields-container */
+    width: 50%; /* Largeur du champ */
+    height: 50%; /* Hauteur du champ */
     transform-origin: bottom right; /* Pivot en bas à droite */
 }
 
 /* Champ jaune */
 .field2 {
-    position:relative;
-    top: 35%; /* Placé juste en dessous du champ vert */
-    left: 25%; /* Alignement par le coin supérieur droit du champ vert */
-    width: 10%; /* Largeur du champ */
-    height: 10%; /* Hauteur du champ */
+    position: absolute;
+    top: 50%; /* Placé juste en dessous du champ vert */
+    left: 50%; /* Alignement par le coin supérieur droit du champ vert */
+    width: 50%; /* Largeur du champ */
+    height: 50%; /* Hauteur du champ */
 }
 
 /* Stries verticales dans les champs verts et jaunes */
-.field1 .stripe,
+.field1 .stripe {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background-color: #4caf50;
+}
 .field2 .stripe {
-    width: 5%; /* Largeur des stries ajustée pour plus de finesse */
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background-color: #ffeb3b;
 }
 
+.field1 .stripe,
+.field2 .stripe {
+    width: 3%; /* Largeur des stries ajustée pour plus de finesse */
+}
+
+/* Génération des stries avec espacement régulier */
+.field1 .stripe:nth-child(1) { left: 5%; }
+.field1 .stripe:nth-child(2) { left: 20%; }
+.field1 .stripe:nth-child(3) { left: 35%; }
+.field1 .stripe:nth-child(4) { left: 55%; }
+.field1 .stripe:nth-child(5) { left: 70%; }
+.field1 .stripe:nth-child(6) { left: 95%; }
+
+.field2 .stripe:nth-child(1) { left: 10%; }
+.field2 .stripe:nth-child(2) { left: 25%; }
+.field2 .stripe:nth-child(3) { left: 40%; }
+.field2 .stripe:nth-child(4) { left: 55%; }
+.field2 .stripe:nth-child(5) { left: 70%; }
+.field2 .stripe:nth-child(6) { left: 95%; }
 /* Satellite positionné au-dessus des champs */
 .satellite {
-    top: -20%; /* Positionnement au-dessus des champs */
-    right: -20%; /* Positionnement à droite des champs */
+    position:absolute;
+    top: -65%; /* Positionnement au-dessus des champs */
+    right: 110%; /* Positionnement à droite des champs */
     font-size: 1.5em;
 }
 
@@ -292,8 +350,33 @@ main {
     background: radial-gradient(circle, rgba(255,165,0,1) 0%, rgba(255,69,0,1) 70%, rgba(255,0,0,0.5) 100%);
 }
 
+/* Style commun à la box */
+.info-box {
+    position: fixed;
+    background: linear-gradient(white, #f0f0f0);
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    transition: all 1s ease; /* Transition fluide entre les états */
+}
 
+/* Style pour l'état initial */
+.info-box.initial {
+    bottom: 95px; /* Position initiale en bas à droite */
+    right: 95px;
+    width: 375px;
+    height: 495px;
+}
 
-
-
-
+/* Style pour l'état centré */
+.info-box.centered {
+    bottom: 30px; /* La partie basse de l'encadré est à 30px du bas de la page */
+    left: calc(50% - 515px); /* Centré horizontalement (600px de largeur totale) */
+    width: 1030px; /* Largeur finale */
+    height: 495px; /* Hauteur finale */
+    font-size: calc(14px * 1.5); /* Augmente la taille du texte de 1,5 fois */
+}
