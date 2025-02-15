@@ -14,3 +14,6 @@ ENV/
 *.mp4
 
 
+# Ajout des lignes spécifiques de deletebigfiles
+.idea/shelf/Changes/mars.glb
+.idea/shelf/Changes/mars1.glb
