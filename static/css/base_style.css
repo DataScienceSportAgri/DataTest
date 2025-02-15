@@ -41,19 +41,3 @@ footer {
     position: relative;
     clear: both; /* Force le footer sous tout le contenu */
 }
-
-h1 {
-    font-size: 3em;
-    text-align: center;
-    color: black; /* Couleur du texte */
-    text-shadow:
-        2px 2px 0 white,
-        -2px -2px 0 white,
-        2px -2px 0 white,
-        -2px 2px 0 white,
-        2px 0 0 white,
-        -2px 0 0 white,
-        0 2px 0 white,
-        0 -2px 0 white; /* Liseré blanc */
-    padding: 20px;
-}

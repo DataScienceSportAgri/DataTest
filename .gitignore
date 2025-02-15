@@ -1,19 +1,4 @@
 .idea/
-static/models/mars.glb
-staticfiles/models/mars.glb
-db.sqlite3
-.idea/shelf/
-.idea/shelf/Changes/
-.venv/
-venv/
-ENV/
-*.sqlite3
-*.glb
-*.jpeg
-*.png
-*.mp4
-
-
-# Ajout des lignes spécifiques de deletebigfiles
-.idea/shelf/Changes/mars.glb
-.idea/shelf/Changes/mars1.glb
+!static/models/mars.glb
+!staticfiles/models/mars.glb
+!db.sqlite3

@@ -12,41 +12,13 @@
           </div>
   {% block extra_js %}
 <script src="{% static 'js/mars.js' %}"></script>
-
 {% endblock %}
 
   </div>
-    <h1>Bienvenue sur mon projet personnel</h1>
-<div class="info-box initial" id="infoBox">
-    <h3>Objectifs de ce site</h3>
-    <p>Ce site a pour vocation de montrer diverses possibilités offertes par la datascience. Je m'intéresse en particulier 
-        à deux thèmes : le sport et l'agriculture. J'ai également ajouté une application qui permet d'organiser facilement,
-    par le déplacement dynamique de bulles, ses idées, des tâches à réaliser ou répondre à divers besoins d'organisation. Enfin,
-    une application permet de réaliser des sondages pour l'amélioration continue du site. </p><p>L'application d'étude de données 
-    sur le sport s'intéresse à des résultats de courses à pied récupéré sur le site de chronométrage professionnel ProTimming.
-    Les données ont été anonymisés pour respecter le droit des données et l'utilisation de ces données restent strictement
-    privé. Le but de cette application est de montrer diverses connaissances sur les vitesses et la performance en course 
-    à pied en fonction de la catégorie et de divers autres paramètres.</p><p> L'application sur l'agriculture utilise des données
-    satellitaires open source et montre de manière dynamique la pratique de l'image processing et diverses méthodes pouvant
-    exister pour aider les agriculteurs et mieux comprendre spatialement les parcelles cultivées. </p><p>Passez votre souris près 
-    de la fusée pour plus d'explications sur les différentes applications. Enfin, n'hésitez pas à cliquer dessus pour voir
-    différents aspects offerts par la datascience.</p>
-</div>
+  <h1>Bienvenue sur mon projet personnel</h1>
+    
     <div class="rocket-container">
-<div class="booster">
-        <div class="blades">
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-            <div class="blade"></div>
-        </div>
-        <div class="center-flame"></div>
-    </div>
+
     <!-- Conteneur des étages -->
     <div class="stages-container">
         <a href="/agri" class="stage-button stage1 gray-1">
@@ -87,11 +59,21 @@
             </div>
         </a>
     </div>
-
-        <a href="/polls" class="nose-button nose"></a>
-
-
-
+            <!-- Conteneur du nez -->
+    <div class="nose-container">
+        <div class="nose"></div>
     </div>
-          <script src="{% static 'js/encadreMoove.js' %}"></script>
+
+    <!-- Conteneur du booster -->
+    <div class="booster-container">
+        <div class="booster">
+            <div class="blades">
+                {% for i in "1234567890" %} <!-- Générer les lames -->
+                <div class="blade"></div>
+                {% endfor %}
+            </div>
+            <div class="center-flame"></div>
+        </div>
+    </div>
+    </div>
 {% endblock %}
