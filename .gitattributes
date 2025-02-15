@@ -1,0 +1,4 @@
+*.extension filter=lfs diff=lfs merge=lfs -text
+static/models/mars.glb filter=lfs diff=lfs merge=lfs -text
+staticfiles/models/mars.glb filter=lfs diff=lfs merge=lfs -text
+db.sqlite3 filter=lfs diff=lfs merge=lfs -text

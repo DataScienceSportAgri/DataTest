@@ -1,0 +1,11 @@
+<h1>Mes classements de bulles</h1>
+<ul>
+    {% for classement in classements %}
+        <li>
+            {{ classement.name }} - Créé par : {{ classement.user.username }}
+            <a href="{% url 'bubble_list' classement_id=classement.id %}">Voir les bulles</a>
+        </li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'create_classement' %}">Créer un nouveau classement</a>

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+    
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/home_style.css' %}">
+{% endblock %}
+        <div class="star-background"> <!-- Conteneur pour le fond étoilé -->
+  <div id="planet-foreground" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+          </div>
+  {% block extra_js %}
+<script src="{% static 'js/mars.js' %}"></script>
+{% endblock %}
+
+  </div>
+  <h1>Bienvenue sur mon projet personnel</h1>
+    
+    <div class="rocket-container">
+
+    <!-- Conteneur des étages -->
+    <div class="stages-container">
+        <a href="/agri" class="stage-button stage1 gray-1">
+            <div class="fields-container">
+                <!-- Champ vert -->
+                <div class="fields field1">
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                </div>
+
+                <!-- Champ jaune -->
+                <div class="fields field2">
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                    <div class="stripe"></div>
+                </div>
+
+                <!-- Satellite -->
+                <div class="satellite">🛰</div>
+            </div>
+        </a>
+        <a href="/graph" class="stage-button stage2 gray-2">
+            <div class="icons">
+                <div class="runner">🏃</div>
+            </div>
+        </a>
+        <a href="/bubble_sort" class="stage-button stage3 gray-3">
+            <div class="icons">
+                <div class="bubbles">
+                    <div class="bubble red"></div>
+                    <div class="bubble green"></div>
+                    <div class="bubble blue"></div>
+                    <div class="bubble yellow"></div>
+                </div>
+            </div>
+        </a>
+    </div>
+            <!-- Conteneur du nez -->
+    <div class="nose-container">
+        <div class="nose"></div>
+    </div>
+
+    <!-- Conteneur du booster -->
+    <div class="booster-container">
+        <div class="booster">
+            <div class="blades">
+                {% for i in "1234567890" %} <!-- Générer les lames -->
+                <div class="blade"></div>
+                {% endfor %}
+            </div>
+            <div class="center-flame"></div>
+        </div>
+    </div>
+    </div>
+{% endblock %}

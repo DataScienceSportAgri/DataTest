@@ -1,0 +1,10 @@
+/* Applique l'image de fond à toute la page */
+body {
+    margin: 0; /* Supprime les marges par défaut */
+    padding: 0; /* Supprime les paddings par défaut */
+    height: 100vh; /* S'assure que le fond couvre toute la hauteur de la fenêtre */
+    background-image: url('../images/fondchamps.jpg'); /* Chemin relatif vers l'image */ /* Remplacez 'image.jpg' par le chemin de votre image */
+    background-size: cover; /* L'image couvre toute la page en gardant ses proportions */
+    background-position: center; /* Centre l'image */
+    background-repeat: no-repeat; /* Empêche la répétition de l'image */
+}

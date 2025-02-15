@@ -1,0 +1,315 @@
+.course-list {
+    width: 100%;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+}
+
+.course-row {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+
+.course-row:last-child {
+    border-bottom: none;
+}
+
+.course-cell {
+    flex: 1;
+    padding: 10px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.course-cell:first-child {
+    flex: 2;
+}
+
+.course-header {
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
+
+.course-item:hover {
+    background-color: #e0e0e0;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.orange-row {
+    background-color: rgba(255, 165, 0, 0.2);
+}
+
+.orange-row:hover {
+    background-color: rgba(255, 165, 0, 0.4);
+}
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination .step-links a {
+    color: #007bff;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background-color .3s;
+    border: 1px solid #ddd;
+    margin: 0 4px;
+}
+
+.pagination .step-links a:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.pagination .current {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
+    border: 1px solid #007bff;
+}
+.majorone {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+
+
+
+.category-container {
+    border: 1px solid #e0e0e0;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    padding: 15px;
+    min-height: 100px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.group-of-category-container {
+    border: 1px solid #d8d8d8;
+    background-color: #fafafa;
+    border-radius: 5px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.control-button button {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.control-button button:hover {
+    background-color: #e8e8e8;
+}
+
+#categorie_selected_uniques_series {
+    background-color: #f5f5f5;
+    border: 1px dashed #ccc;
+    min-height: 80px;
+}
+
+
+.category-box {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 5px;
+    background-color: #f0f0f0;
+    border: 1px solid #999;
+    cursor: move;
+}
+#dynamic-stats-container {
+    display: grid;
+    grid-template-columns: 30% 70%;
+    gap: 20px;
+}
+
+
+.distances-container {
+    display: flex;
+    flex-direction: column;
+    width: 200px; /* ou toute autre valeur fixe */
+}
+
+
+.stats-section {
+    flex: 1;
+    max-width: 95%;
+    background-color: #f5f5f5; /* Change le fond des sections pour contraster */
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Ajoute une ombre légère */
+}
+
+
+.vitesses-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.vitesses-container h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 5px;
+}
+
+.vitesses-grid {
+    display: grid;
+}
+
+/* Classes dynamiques pour différents nombres de colonnes */
+.vitesses-grid-1 { grid-template-columns: 1fr; }
+.vitesses-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.vitesses-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.vitesses-grid-4 { grid-template-columns: repeat(4, 1fr); }
+/* Ajoutez autant de classes que nécessaire pour couvrir le nombre maximum possible de séries */
+
+
+
+
+
+
+.stats-flex-container {
+    min-width: 0; /* Empêche le débordement */
+    flex: 1;
+    min-width: 200px; /* Ajustez cette valeur selon vos besoins */
+}
+
+
+h4 {
+    margin: 0;
+    padding: 0;
+}
+
+
+
+h5 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+td:first-child {
+    font-weight: bold;
+}
+
+
+#statistics-container {
+    width: 100%;
+    position: relative;
+    margin-bottom: 40px;  /* Réduire la marge */
+}
+
+.series-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.stats-flex-container {
+    display: flex;
+    justify-content: center; /* Change space-between to center */
+    gap: 5px; /* Réduit l'espacement entre les colonnes */
+    margin-bottom: 30px;
+    background-color: #f0f0f0; /* Restaure le fond gris */
+    padding: 20px;
+    border-radius: 5px;
+}
+
+#progress-info-container {
+    position: relative;
+    width: 100%;
+    clear: both;
+    margin-top: 30px;
+    margin-bottom: 40px;
+}
+
+#progress-info, #countdown {
+    margin: 10px 0;  /* Réduire les marges */
+    text-align: center;
+}
+
+
+.stats-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-section td {
+    padding: 5px;
+    text-align: left;
+}
+
+.stats-section td:last-child {
+    text-align: right;
+}
+
+
+#progress-info, #countdown {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+    clear: both;
+}
+
+
+
+@media (max-width: 768px) {
+    .stats-flex-container {
+        flex-direction: column;
+    }
+
+    .stats-section {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    #progress-info, #countdown {
+        width: 100%;
+        font-size: 14px;
+        margin-top: 15px;
+        text-align: center;
+    }
+}
+
+
+
+
+
+

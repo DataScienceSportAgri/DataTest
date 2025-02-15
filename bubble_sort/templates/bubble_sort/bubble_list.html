@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% csrf_token %}
+
+{% block content %}
+    {% load static %}
+    <script src="{% static 'js/deplacement.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/bubble.css' %}">
+
+    <h1>{{ classement.name }}</h1>
+    <form id="update-name-form" method="post" action="{% url 'bubble_list' classement.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_name">
+        <input type="text" name="classement_name" value="{{ classement.name }}">
+    </form>
+<div class="color-picker">
+    <div class="color-group">
+        <label>Couleur de début :
+            <select id="color-start" class="color-select">
+                {% for color in color_presets %}
+    <option value="{{ color.id }}"
+            data-color-code="{{ color.color_code }}"
+            {% if color.id == classement.color_start.id %}selected{% endif %}>
+        {{ color.name }}
+    </option>
+    {% endfor %}
+            </select>
+            <span class="color-preview" style="background: {{ classement.start_color.color_code }}"></span>
+        </label>
+    </div>
+
+    <div class="color-group">
+        <label>Couleur de fin :
+            <select id="color-end" class="color-select">
+                {% for color in color_presets %}
+    <option value="{{ color.id }}"
+            data-color-code="{{ color.color_code }}"
+            {% if color.id == classement.color_end.id %}selected{% endif %}>
+        {{ color.name }}
+    </option>
+    {% endfor %}
+            </select>
+            <span class="color-preview" style="background: {{ classement.end_color.color_code }}"></span>
+        </label>
+    </div>
+</div>
+
+<div id="bubble-container" data-bubble-list-url="{% url 'bubble_list' classement.id %}">
+        {% for bubble in bubbles %}
+        <div class="bubble"
+     data-id="{{ bubble.id }}"
+     style="width: {{ bubble.width }}px; height: {{ bubble.height }}px;">
+                <div class="bubble-header">
+            <textarea class="bubble-title">{{ bubble.title }}</textarea>
+            <div style="display: none;">
+            <span>data-width="{{ bubble.width }}"  <!-- Ajout --></span>
+     <span>data-height="{{ bubble.height }}" <!-- Ajout --></span>
+            </div>
+          <div class="drag-handle"> </div> <!-- Nouvelle poignée -->
+                <div class="bubble-number"></div>
+                </div>
+                    <div class="delete-bubble">×</div>
+            <textarea>{{ bubble.content }}</textarea>
+    <div class="resize-handle"></div> <!-- Poignée de redimensionnement existante -->
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not bubbles %}
+        <p>Ce classement est vide. Commencez par ajouter une bulle !</p>
+    {% endif %}
+
+    <button id="add-bubble">Ajouter une bulle</button>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script>
+$(function() {
+    $("#bubble-container").sortable({
+        update: function(event, ui) {
+            var positions = $(this).sortable('toArray', {attribute: 'data-id'});
+            $.ajax({
+                url: "{% url 'bubble_list' classement.id %}",
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'update_positions',
+                    positions: positions
+                }),
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        console.log('Positions updated successfully');
+                        updateBubbleColors(); // Mise à jour des bulles (fonction existante)
+                        updateBubbleNumbers();
+                    } else {
+                        console.error('Error updating positions:', response.message);
+                    }
+                }
+            });
+        }
+    });
+
+    $("#add-bubble").click(function() {
+        $.ajax({
+            url: "{% url 'bubble_list' classement.id %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                action: 'add_bubble',
+                content: ''
+            }),
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Création de la bulle avec toutes les données
+                    const newBubble = $(
+                        `<div class="bubble"
+                              data-id="${response.id}"
+                              data-width="${response.width}"
+                              data-height="${response.height}"
+                              style="width: ${response.width}px; height: ${response.height}px">
+                            <div class="drag-handle"> </div>
+                            <div class="bubble-number"></div>
+                            <div class="delete-bubble">×</div>
+                            <textarea></textarea>
+                            <div class="resize-handle"></div>
+                        </div>`
+                    );
+
+                    $("#bubble-container").append(newBubble);
+
+                    // Mise à jour globale
+                    updateBubbleNumbers();
+                    updateBubbleColors();
+                    updateOrder(); // Enregistre les nouvelles positions
+
+                    // Initialisation des fonctionnalités
+                    $("#bubble-container")
+                        .sortable("refresh")
+                        .resizable("init");
+                }
+            }
+        });
+    });
+
+
+});
+
+    </script>
+{% endblock %}
