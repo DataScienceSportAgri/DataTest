@@ -2,7 +2,7 @@
 {% csrf_token %}
 {% load static %}
 {% block content %}
-<h1>Distribution des vitesses</h1>
+<h2>Distribution des vitesses</h2>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 {{ refresh_interval|default:"25000"|json_script:"refresh_interval" }}
     {{ total_count|default:"0"|json_script:"total_count" }}

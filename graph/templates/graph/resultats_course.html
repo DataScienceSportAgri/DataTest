@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block content %}
-    <h1>Résultats de la course : {{ course.nom_marsien }} ({{ course.annee }})</h1>
+    <h2>Résultats de la course : {{ course.nom_marsien }} ({{ course.annee }})</h2>
         <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% if resultats_list %}
         <div class="course-list">

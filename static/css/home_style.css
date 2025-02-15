@@ -366,17 +366,32 @@ main {
 
 /* Style pour l'état initial */
 .info-box.initial {
-    bottom: 95px; /* Position initiale en bas à droite */
-    right: 95px;
-    width: 375px;
-    height: 495px;
+    bottom: 50px; /* Position initiale en bas à droite */
+    right: 50px;
+    width: 360px;
+    height: 540px;
 }
 
 /* Style pour l'état centré */
 .info-box.centered {
-    bottom: 30px; /* La partie basse de l'encadré est à 30px du bas de la page */
-    left: calc(50% - 515px); /* Centré horizontalement (600px de largeur totale) */
-    width: 1030px; /* Largeur finale */
-    height: 495px; /* Hauteur finale */
+    bottom: 25px; /* La partie basse de l'encadré est à 30px du bas de la page */
+    left: calc(50% - 540px); /* Centré horizontalement (600px de largeur totale) */
+    width: 1080px; /* Largeur finale */
+    height: 485px; /* Hauteur finale */
     font-size: calc(14px * 1.5); /* Augmente la taille du texte de 1,5 fois */
+}
+h2 {
+    font-size: 2em;
+    text-align: center;
+    color: black; /* Couleur du texte */
+    text-shadow:
+        2px 2px 0 white,
+        -2px -2px 0 white,
+        2px -2px 0 white,
+        -2px 2px 0 white,
+        2px 0 0 white,
+        -2px 0 0 white,
+        0 2px 0 white,
+        0 -2px 0 white; /* Liseré blanc */
+    padding: 15px;
 }

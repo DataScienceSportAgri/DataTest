@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block content %}
-<h1>Liste des courses</h1>
+<h2>Liste des courses</h2>
 <a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
 <link rel="stylesheet" href="{% static 'css/styles.css' %}">
         <form method="get" action="{% url 'graph:search_results' %}">
