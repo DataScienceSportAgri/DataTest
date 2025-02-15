@@ -12,7 +12,8 @@ ENV/
 *.jpeg
 *.png
 *.mp4
-
+*.sql
+*.sqlite
 
 .idea/shelf/Changes/mars.glb
 .idea/shelf/Changes/mars1.glb
