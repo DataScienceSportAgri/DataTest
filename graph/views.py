@@ -91,10 +91,6 @@ class ResultatsCourseView(generic.ListView):
             )
         ).order_by('position')
 
-
-
-
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['course'] = Course.objects.get(pk=self.kwargs['pk'])

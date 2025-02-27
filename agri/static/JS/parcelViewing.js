@@ -2,7 +2,8 @@ class ParcelViewer {
     constructor(containerId = 'grid-container') {
        this.container = document.getElementById(containerId);
        this.displayWidth = 800;
-
+       this.datePicker = document.getElementById('date-picker');
+       this.currentDate = this.datePicker.value
     // Initialiser les éléments critiques
        this.initCriticalElements();
        this.initializeImage();
@@ -11,7 +12,7 @@ class ParcelViewer {
     }
 
     initCriticalElements() {
-        this.datePicker = document.getElementById('date-picker');
+
         this.image = document.getElementById('satellite-image');
         this.bandValues = document.getElementById('band-values-table');
 
@@ -44,6 +45,7 @@ class ParcelViewer {
 
             // Initialiser la grille après ajustement des dimensions
             this.gridOverlay = new GridOverlay('grid-container', this.displayWidth, this.image);
+            console.log('parameters', this.gridOverlay.parameters)
             this.setupGridInteraction();
         };
 
@@ -55,23 +57,54 @@ class ParcelViewer {
     }
 
     setupGridInteraction() {
-            this.gridOverlay.grid.addEventListener('mousemove', _.throttle((e) => {
-                const cell = e.target.closest('.grid-cell');
-                if (!cell) return;
+        // Stocker la référence à la fonction throttled
+        const throttledHandler = _.throttle((e) => {
+            const rect = this.gridOverlay.grid.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-                const cellId = cell.dataset.backendId;
-                if (!cellId) {
-                    console.error('ID de cellule non trouvé');
-                    return;
+            // Utiliser requestAnimationFrame pour une mise à jour fluide
+            requestAnimationFrame(() => {
+                const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.grid-cell');
+
+                if (cell && !this.gridOverlay.destroyed) {
+                    this.handleCellHover(cell, x, y);
+                } else {
+                    this.resetHighlight();
                 }
+            });
+        }, 100); // Intervalle plus raisonnable (100ms au lieu de 10s)
 
-                this.updateZoneData(cellId);
-                this.highlightGridCell(cell);
-            }, 100));
+        // Gestionnaire d'événements unique
+        this.gridOverlay.grid.addEventListener('mousemove', throttledHandler);
+        this.gridOverlay.grid.addEventListener('mouseleave', this.resetHighlight.bind(this));
 
-        this.gridOverlay.grid.addEventListener('mouseleave', () => {
-            this.resetBandValues();
-        });
+        // Nettoyage des anciens écouteurs
+        this.cleanupGridInteractions = () => {
+            this.gridOverlay.grid.removeEventListener('mousemove', throttledHandler);
+            this.gridOverlay.grid.removeEventListener('mouseleave', this.resetHighlight);
+        };
+    }
+
+    handleCellHover(cell, x, y) {
+        try {
+            const cellId = cell.dataset.backendId;
+            if (!cellId) throw new Error('ID cellule manquant');
+
+            // Mise à jour synchrone des données
+            this.updateZoneData(cellId);
+
+            // Highlight précis avec coordonnées relatives
+            this.highlightGridCell({
+                element: cell,
+                offsetX: x - cell.offsetLeft,
+                offsetY: y - cell.offsetTop
+            });
+
+        } catch (error) {
+            console.error('Erreur hover:', error);
+            this.resetHighlight();
+        }
     }
 
 
@@ -79,30 +112,23 @@ class ParcelViewer {
         // Gestionnaire de changement de date
         this.datePicker.addEventListener('change', async (e) => {
             await this.handleDateChange(e.target.value);
-        });
-
-        // Vérifiez si gridOverlay est bien défini avant d'ajouter des événements
-        if (!this.gridOverlay || !this.gridOverlay.grid) {
-            console.error('gridOverlay is not defined or not initialized');
-            return;
-        }
-
-        // Gestionnaire de survol avec throttle
-        this.gridOverlay.grid.addEventListener('mousemove', _.throttle((e) => {
-            const { imageX, imageY } = this.getImageCoordinates(e);
-            this.updateZoneData(imageX, imageY);
-            this.highlightGridCell(imageX, imageY);
-        }, 100));
-
-        // Réinitialiser les valeurs des bandes lorsque la souris quitte la grille
-        this.gridOverlay.grid.addEventListener('mouseleave', () => {
-            this.resetBandValues();
+            this.setupGridInteraction();
         });
     }
 
+    get_variables_naturalPixelColumnSize({naturalPixelColumnSize}) {
+        return naturalPixelColumnSize;
+    }
+    get_variables_naturalPixelRowSize({naturalPixelRowSize}) {
+        return naturalPixelRowSize;
+    }
+
+
     async handleDateChange(date) {
+        this.naturalPixelRowSize =  this.get_variables_naturalPixelRowSize(this.gridOverlay.parameters)
+        this.naturalPixelColumnSize = this.get_variables_naturalPixelColumnSize(this.gridOverlay.parameters)
         try {
-            const response = await fetch('', {
+            const response = await fetch('/agri/demo/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -112,78 +138,30 @@ class ParcelViewer {
                 body: new URLSearchParams({
                     action: 'change_date',
                     date: date,
+                    column_size: this.naturalPixelColumnSize,
+                    row_size: this.naturalPixelRowSize
                 })
             });
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
+                const data = await response.json();
 
-            // Mettre à jour l'image et réinitialiser la grille
-            this.image.src = STATIC_URL + data.rgb_image_path;
-            this.currentDate = date;
-
-            // Réinitialiser les valeurs des bandes
-            this.resetBandValues();
+                // Mettre à jour l'image et réinitialiser la grille
+                this.image.src = STATIC_URL + data.rgb_image_path;
+                this.currentDate = date;
+                        // Création de la nouvelle grille avec les données serveur
+                this.gridOverlay = new GridOverlay(
+                    'grid-container',
+                    800,
+                    this.image,
+                    data.grid_element // Données provenant du serveur
+                );
+                this.resetBandValues();
         } catch (error) {
             console.error('Erreur lors du changement de date:', error);
         }
     }
 
-    getImageCoordinates(event) {
-        const rect = this.container.getBoundingClientRect();
-        const scale = this.image.naturalWidth / this.displayWidth;
-
-        const imageX = Math.floor((event.clientX - rect.left) * scale / this.pixelSize) * this.pixelSize;
-        const imageY = Math.floor((event.clientY - rect.top) * scale / this.pixelSize) * this.pixelSize;
-
-        return { imageX, imageY };
-    }
-
-     setupGridOverlay() {
-        // Configuration spécifique à ParcelViewer
-        const scaleX = this.displayWidth / this.image.naturalWidth;
-        const scaleY = (this.displayWidth * (this.image.naturalHeight / this.image.naturalWidth)) / this.image.naturalHeight;
-
-        this.gridOverlay.gridData = this.parseGridData().map(zone => ({
-            ...zone,
-            coordinates: [
-                Math.round(zone.coordinates[0] * scaleX),
-                Math.round(zone.coordinates[1] * scaleY),
-                Math.round(zone.coordinates[2] * scaleX),
-                Math.round(zone.coordinates[3] * scaleY)
-            ]
-        }));
-
-        this.gridOverlay.calculateGridLayout();
-        this.attachParcelSpecificStyles();
-    }
-
-    attachParcelSpecificStyles() {
-        // Styles complémentaires
-        const style = document.createElement('style');
-        style.textContent = `
-            .grid-overlay {
-                pointer-events: none;
-                z-index: 2;
-            }
-            .grid-cell:hover {
-                outline: 2px solid #ff0000aa;
-                z-index: 3;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-
-    getImageCoordinates(event) {
-        const rect = this.container.getBoundingClientRect();
-        const scale = this.image.naturalWidth / this.displayWidth;
-
-        const imageX = Math.floor((event.clientX - rect.left) * scale / this.pixelSize) * this.pixelSize;
-        const imageY = Math.floor((event.clientY - rect.top) * scale / this.pixelSize) * this.pixelSize;
-
-        return { imageX, imageY };
-    }
 
 
     getCsrfToken() {
@@ -191,8 +169,10 @@ class ParcelViewer {
     }
 
     async updateZoneData(cellId) {
+        this.naturalPixelRowSize =  this.get_variables_naturalPixelRowSize(this.gridOverlay.parameters)
+        this.naturalPixelColumnSize = this.get_variables_naturalPixelColumnSize(this.gridOverlay.parameters)
         try {
-            const response = await fetch('/get_zone_data/', {
+            const response = await fetch('/agri/demo/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -202,13 +182,16 @@ class ParcelViewer {
                 body: new URLSearchParams({
                     action: 'get_zone_by_id',
                     cell_id: cellId,
-                    date: this.currentDate
+                    date: this.currentDate,
+                    column_size: this.naturalPixelColumnSize,
+                    row_size: this.naturalPixelRowSize
                 })
             });
 
             if (!response.ok) throw new Error(`Erreur HTTP! statut: ${response.status}`);
 
             const data = await response.json();
+            console.log('data',data)
             this.displayBandValues(data);
         } catch (error) {
             console.error('Erreur lors de la récupération des données:', error);
@@ -224,35 +207,26 @@ class ParcelViewer {
             const elementId = `band-${bandNum}${bandNum === 8 ? 'a' : ''}-value`;
             document.getElementById(elementId).textContent = value;
         }
-
-        // Mise à jour des coordonnées
-        const coords = data.coordinates.map(Math.round);
-        document.querySelector('.coordinates').textContent =
-            `Coordonnées: ${coords[0]}-${coords[2]} (X), ${coords[1]}-${coords[3]} (Y)`;
     }
 
-    highlightGridCell(imageX, imageY) {
-        // Supprimer les surbrillances existantes
-        const highlightedCells = this.gridOverlay.querySelectorAll('.hover-zone.highlighted');
-        highlightedCells.forEach(cell => cell.classList.remove('highlighted'));
+    highlightGridCell({ element, offsetX, offsetY }) {
+        // Supprimer l'ancien highlight en une seule opération
+        const currentHighlighted = this.gridOverlay.grid.querySelector('.highlighted');
+        currentHighlighted?.classList.remove('highlighted');
 
-        // Trouver la cellule correspondant aux coordonnées
-        const scaleX = this.displayWidth / this.image.naturalWidth;
-        const scaleY = this.displayWidth / this.image.naturalHeight;
-
-        const left = imageX * scaleX;
-        const top = imageY * scaleY;
-
-        // Rechercher une cellule correspondant à ces coordonnées
-        const cell = Array.from(this.gridOverlay.children).find(zone => {
-            const zoneLeft = parseFloat(zone.style.left);
-            const zoneTop = parseFloat(zone.style.top);
-            return Math.abs(zoneLeft - left) < 1 && Math.abs(zoneTop - top) < 1;
-        });
-
-        if (cell) {
-            cell.classList.add('highlighted');
+        // Ajouter le nouveau highlight avec style optimisé
+        if (element) {
+            element.classList.add('highlighted');
+            element.style.setProperty('--hover-x', `${offsetX}px`);
+            element.style.setProperty('--hover-y', `${offsetY}px`);
         }
+    }
+
+    resetHighlight() {
+        this.gridOverlay.grid.querySelectorAll('.highlighted').forEach(cell => {
+            cell.classList.remove('highlighted');
+        });
+        this.resetBandValues();
     }
 
     resetBandValues() {
@@ -268,7 +242,7 @@ class ParcelViewer {
 
 
 class GridOverlay {
-    constructor(containerId = 'grid-container', displayWidth = 800, imageElement) {
+    constructor(containerId = 'grid-container', displayWidth = 800, imageElement, gridData = null) {
         this.image = imageElement; // Nouveau paramètre
         console.log(`Initializing GridOverlay for container: ${containerId}`);
         this.container = document.getElementById(containerId);
@@ -278,18 +252,11 @@ class GridOverlay {
         console.log(`Container found:`, this.container);
 
         this.displayWidth = displayWidth;
-        this.gridData = this.parseGridData();
+         // Récupération dynamique des données
+        this.gridData = gridData || this.parseGridData()
         console.log('Parsed grid data:', this.gridData);
         this.grid = document.getElementById('gridContainer');
-        this.initStructure();
-
-        // Appeler les méthodes nécessaires pour afficher la grille
-        //this.calculateGridLayout();
-        //this.renderGrid();
-    }
-
-    initStructure() {
-        console.log('Initializing grid structure...');
+                console.log('Initializing grid structure...');
 
         // Créer le wrapper principal
         this.wrapper = document.createElement('div');
@@ -314,7 +281,13 @@ class GridOverlay {
         // Ajouter le wrapper au conteneur principal
         this.container.appendChild(this.wrapper);
 
-        const params = this.calculateGridParameters();
+        this.parameters = this.calculateGridParameters();
+        const params = this.parameters
+        this.initStructure(params);
+    }
+
+    initStructure(params) {
+
         this.createGrid(params);
         this.verifyGridZones(params);
         console.log('Grid structure initialized:', this.grid);
@@ -697,67 +670,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
-function calculateGridParameters() {
-        console.log('Calculating grid parameters...');
-
-        if (!this.gridData || this.gridData.length === 0) {
-            throw new Error('Grid data is empty or invalid.');
-        }
-
-        // Récupérer les coordonnées du premier élément
-        const firstCoordinates = this.gridData[0].coordinates;
-        const [x1, y1, x2, y2] = firstCoordinates;
-
-        // Calculer les tailles naturelles des pixels
-        const naturalPixelRowSize = y2 - y1; // Différence entre les positions impaires
-        const naturalPixelColumnSize = x2 - x1; // Différence entre les positions paires
-
-        if (!Number.isInteger(naturalPixelRowSize) || !Number.isInteger(naturalPixelColumnSize)) {
-            throw new Error('Natural pixel sizes must be integers.');
-        }
-
-        console.log(`Natural Pixel Row Size: ${naturalPixelRowSize}, Natural Pixel Column Size: ${naturalPixelColumnSize}`);
-
-        // Calculer le nombre de lignes et de colonnes
-        const allOddPositions = this.gridData.flatMap(({ coordinates }) => [coordinates[1], coordinates[3]]);
-        const allEvenPositions = this.gridData.flatMap(({ coordinates }) => [coordinates[0], coordinates[2]]);
-
-        const minOdd = Math.min(...allOddPositions);
-        const maxOdd = Math.max(...allOddPositions);
-        const minEven = Math.min(...allEvenPositions);
-        const maxEven = Math.max(...allEvenPositions);
-
-        const numberOfRows = Math.ceil((maxOdd - minOdd) / naturalPixelRowSize);
-        const numberOfColumns = Math.ceil((maxEven - minEven) / naturalPixelColumnSize);
-
-        if (!Number.isInteger(numberOfRows) || !Number.isInteger(numberOfColumns)) {
-            throw new Error('Number of rows and columns must be integers.');
-        }
-
-        console.log(`Number of Rows: ${numberOfRows}, Number of Columns: ${numberOfColumns}`);
-
-        // Calculer le ratio de conversion naturel -> rendu
-        const naturalToRendered = this.displayWidth / this.image.naturalWidth;
-
-        // Calculer les tailles rendues des pixels
-        let renderedPixelRowSize = naturalPixelRowSize * naturalToRendered;
-        let renderedPixelColumnSize = naturalPixelColumnSize * naturalToRendered;
-
-        console.log(`Rendered Pixel Row Size: ${renderedPixelRowSize}, Rendered Pixel Column Size: ${renderedPixelColumnSize}`);
-
-        // Ajustement pour garantir que la somme des tailles rendues correspond à la taille totale
-        renderedPixelRowSize = this.adjustSizes(renderedPixelRowSize, numberOfRows, this.container.offsetHeight);
-        renderedPixelColumnSize = this.adjustSizes(renderedPixelColumnSize, numberOfColumns, this.container.offsetWidth);
-
-        return {
-            naturalPixelRowSize,
-            naturalPixelColumnSize,
-            numberOfRows,
-            numberOfColumns,
-            renderedPixelRowSizes: renderedPixelRowSize,
-            renderedPixelColumnSizes: renderedPixelColumnSize,
-            naturalToRendered
-        };
-    }
 

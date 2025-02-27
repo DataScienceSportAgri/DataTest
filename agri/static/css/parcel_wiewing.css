@@ -114,3 +114,20 @@
 #band-values-table td {
     text-align: center;
 }
+
+.grid-cell.highlighted {
+    position: relative;
+    background: rgba(255,220,0,0.3);
+    transition: background 0.2s ease;
+}
+
+.grid-cell.highlighted::after {
+    content: '';
+    position: absolute;
+    left: var(--hover-x, 0);
+    top: var(--hover-y, 0);
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, yellow 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+}

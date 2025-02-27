@@ -68,7 +68,7 @@ class ParcelImageProcessor:
         height, width = self.current_band.shape
         grid = []
 
-
+        print('test', height, width)
         for y in range(0, height, self.gridrowsize):
             for x in range(0, width, self.gridcolumnsize):
                 base_id = f"{x}-{y}-{self.gridrowsize}-{self.gridcolumnsize}"

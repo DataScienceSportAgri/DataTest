@@ -6,7 +6,15 @@
     const STATIC_URL = '{% static "" %}';
 </script>
     <div class="parcel-viewer">
-        <div class="date-selector">
+
+        <!-- Ajouter un conteneur dédié avec ID explicite -->
+        <div id="grid-container">
+            <div class="viewer-container">
+                <div class="image-container" id="parcel-image">
+                    <img id="satellite-image" src="{% static rgb_image_path %}" alt="Parcel view">
+                </div>
+            </div>
+                    <div class="date-selector">
             <select id="date-picker">
                 {% for date in dates %}
                     <option value="{{ date }}" {% if date == initial_date %}selected{% endif %}>
@@ -15,13 +23,6 @@
                 {% endfor %}
             </select>
         </div>
-        <!-- Ajouter un conteneur dédié avec ID explicite -->
-        <div id="grid-container">
-            <div class="viewer-container">
-                <div class="image-container" id="parcel-image">
-                    <img id="satellite-image" src="{% static rgb_image_path %}" alt="Parcel view">
-                </div>
-            </div>
             <script type="application/json" id="grid-data">
                 {{ pixel_grid|safe }}
             </script>

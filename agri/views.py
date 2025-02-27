@@ -2,6 +2,8 @@ from venv import logger
 
 from django.http import JsonResponse, HttpResponseServerError
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from pydantic import ValidationError
 
 from .services.image_processor import ParcelImageProcessor
@@ -18,7 +20,7 @@ def home(request):
 
 from django.views.generic import TemplateView
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ParcelView(TemplateView):
     template_name = 'agri/parcel_viewer.html'
 
@@ -40,26 +42,15 @@ class ParcelView(TemplateView):
         pixel_grid = processor.serialize_grid(raw_grid)
         # Récupération des données structurées
         grid_session_data = processor.get_grid_ids_and_data(raw_grid)
-
+        print('grid_session_data', grid_session_data)
         # Stockage direct dans la session comme vous le souhaitez
         self.request.session['loaded_ids'] = grid_session_data['ids']
         self.request.session['grid_cells'] = grid_session_data['data']
         self.request.session.modified = True
         print('pixel grid', pixel_grid)
-
         context['pixel_grid'] = pixel_grid
 
-
         return context
-
-    def _store_grid_session(self, grid_payload):
-        """Stockage structuré dans la session"""
-        session_key = f"grid_{grid_payload['metadata']['date']}"
-        self.request.session[session_key] = {
-            'metadata': grid_payload['metadata'],
-            'cells': grid_payload['cells']
-        }
-        self.request.session.modified = True
 
 
 
@@ -72,44 +63,64 @@ class ParcelView(TemplateView):
                 dates.append(date)
         return sorted(dates)
 
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:
                 action = request.POST.get('action')
-                date = request.POST.get('date')
-
                 if action == 'change_date':
+                    date = request.POST.get('date')
+                    column_size = request.POST.get('column_size')
+                    row_size = request.POST.get('row_size')
+                    print('date',date,'column_size',column_size,'row_size',row_size)
                     # Création et sauvegarde de la nouvelle image
-                    processor = ParcelImageProcessor(date)
-                    image_path = processor.save_rgb_image()
-                    pixel_gird = processor.create_pixel_grid()
+                    processor2 = ParcelImageProcessor(date, int(column_size), int(row_size))
+                    rgb_image_path = processor2.save_rgb_image()
+                    print('rgb_image_path',rgb_image_path)
+                    raw_grid = processor2.create_pixel_grid()
+                    pixel_grid = processor2.serialize_grid(raw_grid)
+                    # Récupération des données structurées
+                    grid_session_data = processor2.get_grid_ids_and_data(raw_grid)
+
+                    # Stockage direct dans la session comme vous le souhaitez
+                    self.request.session['loaded_ids'] = grid_session_data['ids']
+                    self.request.session['grid_cells'] = grid_session_data['data']
+                    self.request.session.modified = True
                     return JsonResponse({
-                        'rgb_image_path': image_path,
-                        'pixel_gird': pixel_gird
+                        'rgb_image_path': rgb_image_path,
+                        'pixel_grid': pixel_grid
                     })
 
                 elif action == 'get_zone_by_id':
                     cell_id = request.POST.get('cell_id')
                     date = request.POST.get('date')
-
+                    column_size = request.POST.get('column_size')
+                    row_size = request.POST.get('row_size')
+                    print('date', date)
                     # Vérifier la cohérence de la date
                     current_grid = request.session.get('grid_cells')
-                    if not current_grid or current_grid['metadata']['date'] != date:
-                        raise ValueError("Session expirée ou date incohérente")
-                    # Récupération directe depuis les données de session
 
                     cell_data = current_grid.get(cell_id)
-
+                    print('cell_data',cell_data)
                     if not cell_data:
                         return JsonResponse({'error': 'Zone non trouvée'}, status=404)
-                    processor = ParcelImageProcessor(cell_data['date'], 4, 4)
-                    zone_data = processor.get_zone_data(cell_data)
-                    return JsonResponse({
-                        'coordinates': zone_data['coordinates'],
-                        'bands': zone_data['bands']
-                    })
-
-
+                    print('test')
+                    processor3 = ParcelImageProcessor(date, int(column_size), int(row_size))
+                    print('test2')
+                    zone_data = processor3.get_zone_data(cell_data)
+                    print('zone data', zone_data)
+                    # Avant l'envoi au serveur
+                    for band in zone_data['bands']:
+                        zone_data['bands'][band] = zone_data['bands'][band].item()  # Convertit np.float32 en float natif
+                    try:
+                        return JsonResponse({
+                            'coordinates': zone_data['coordinates'],
+                            'bands': zone_data['bands']
+                        })
+                    except Exception as e:
+                        logger.error(f"Erreur critique: {str(e)}", exc_info=True)
+                        return JsonResponse({'error': 'Erreur de traitement'}, status=500)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
+
         return JsonResponse({'error': 'Requête non autorisée'}, status=400)
