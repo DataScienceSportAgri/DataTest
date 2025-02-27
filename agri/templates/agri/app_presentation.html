@@ -7,21 +7,30 @@
     <title>Presentation de la future application d'agriculture digitale</title>
 </head>
 <body>
+<div class="content-container">
 <link rel="stylesheet" href="{% static 'css/agri.css' %}">
     <h3>Introduction</h3>
+<div class="text-box">
+
     <p>Passionné par la science du végétal et ses mécanismes moléculaires, j'ai travaillé à l'INRAE et à Limagrain dans le
         cadre de recherches exploratoires visant à améliorer les qualités des plantes destinées à l'agriculture. Cette passion
         m'a mené à diverses conclusions concernant les besoins de l'agriculture et les technologies qui y sont rattachées.
         D'abord, l'agriculture fait face à toujours plus de demandes et de nombreux stress économiques et environnementaux
-        lui sont d'années en années imposées, les agriculteurs ont besoin de technologies toujours plus sophistiquées pour
-        répondre à ces contraintes. C'est pourquoi j'ai décidé de m'engager dans un double cursus alliant à la fois des
-        compétences de pointes dans 'l'ingénieurie du végétale' et en datascience car c'est l'alliance de ces compétences
-        qui est pour moi la clef de voute pour la résolution des problématiques concernant l'agriculture. <p></p>Ces problématiques
-        peuvent concerner aussi bien la réduction des intrants que la recherche & développement dans l'amélioration variétale.
-        C'est pourquoi j'ai décidé de créer cette application qui a partir d'images satellites de champs de diverses grandes
-        cultures et sur divers territoires disponibles en open source de réaliser la prédiction du rendement ou l'évolution
-        de divers indicateurs d'intérêt du champ. L'application développée aura pour objectif de montrer comment prédire
-        du rendement par diverses méthodes de datascience allant de simple moteur de règles jusqu'à l'utilisation
-        d'intelligence artificielle en passant par le machine et le deep learning. </p>
+        lui sont d'années en années imposées. Les agriculteurs ont donc besoin de technologies toujours plus sophistiquées pour
+        répondre à ces contraintes. </p><p>C'est pour répondre à ces problématiques que j'ai décidé de m'engager dans un
+        double cursus alliant à la fois des compétences de pointes dans 'l'ingénieurie du végétale' et en datascience car
+        c'est l'alliance de ces compétences qui est pour moi la clef de voute pour la résolution des problématiques
+        concernant l'agriculture. <p></p>Ces problématiques peuvent concerner aussi bien la réduction des intrants que la
+        recherche & développement dans l'amélioration variétale. C'est pourquoi j'ai décidé de créer cette application qui
+        a partir d'images satellites de champs de diverses grandes cultures et sur divers territoires disponibles en open
+        source de réaliser la prédiction du rendement ou l'évolution de divers indicateurs d'intérêt du champ. L'application
+        développée aura pour objectif de montrer comment prédire du rendement par diverses méthodes de datascience allant
+        de simple moteur de règles jusqu'à l'utilisation d'intelligence artificielle en passant par le machine et le deep
+        learning. </p>
+</div>
+    <div class="demo-button-container">
+            <a href="{% url 'parcel_viewer' %}" class="demo-button">Voir la démonstration</a>
+        </div>
+</div>
 </body>
 {% endblock %}

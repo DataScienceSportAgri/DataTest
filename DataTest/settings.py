@@ -21,8 +21,13 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'node_modules'),
     #os.path.join(BASE_DIR, 'graph','static'),
     #os.path.join(BASE_DIR, 'bubble_sort','static'),
-    os.path.join(BASE_DIR, 'static')
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'agri', 'static'),  # Chemin vers le dossier static de l'app
 ]
+
+# Ajout des configurations CORS
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -43,7 +48,11 @@ SECRET_KEY = 'django-insecure-jfld%(s@^c*@70jz37b*3(zzxypp=wwp9d--qmj!&j26t(1&ex
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+JSON_SERIALIZER = {
+    'ensure_ascii': False,
+    'separators': (',', ':'),
+    'indent': None
+}
 
 
 # Application definition

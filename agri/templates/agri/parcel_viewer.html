@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+    {% load static %}
+    {% csrf_token %}
+    <script>
+    const STATIC_URL = '{% static "" %}';
+</script>
+    <div class="parcel-viewer">
+        <div class="date-selector">
+            <select id="date-picker">
+                {% for date in dates %}
+                    <option value="{{ date }}" {% if date == initial_date %}selected{% endif %}>
+                        {{ date }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <!-- Ajouter un conteneur dédié avec ID explicite -->
+        <div id="grid-container">
+            <div class="viewer-container">
+                <div class="image-container" id="parcel-image">
+                    <img id="satellite-image" src="{% static rgb_image_path %}" alt="Parcel view">
+                </div>
+            </div>
+            <script type="application/json" id="grid-data">
+                {{ pixel_grid|safe }}
+            </script>
+        </div>
+                <div class="band-info-panel">
+<h3>Valeurs des Bandes</h3>
+<table id="band-values-table">
+        <thead>
+            <tr>
+                <th>Bande</th>
+                <th>Nom Usuel</th>
+                <th>Caractéristiques</th>
+                <th>Valeur Moyenne</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Bande 1</td>
+                <td>Aérosol côtier</td>
+                <td>443 nm (60 m)</td>
+                <td id="band-1-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 2</td>
+                <td>Bleu</td>
+                <td>490 nm (10 m)</td>
+                <td id="band-2-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 3</td>
+                <td>Vert</td>
+                <td>560 nm (10 m)</td>
+                <td id="band-3-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 4</td>
+                <td>Rouge</td>
+                <td>665 nm (10 m)</td>
+                <td id="band-4-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 5</td>
+                <td>Bordure rouge (Red Edge)</td>
+                <td>705 nm (20 m)</td>
+                <td id="band-5-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 6</td>
+                <td>Bordure rouge (Red Edge)</td>
+                <td>740 nm (20 m)</td>
+                <td id="band-6-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 7</td>
+                <td>Bordure rouge (Red Edge)</td>
+                <td>783 nm (20 m)</td>
+                <td id="band-7-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 8</td>
+                <td>NIR (Proche infrarouge)</td>
+                <td>842 nm (10 m)</td>
+                <td id="band-8-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 8A</td>
+                <td>NIR étroit (Proche infrarouge étroit)</td>
+                <td>865 nm (20 m)</td>
+                <td id="band-8a-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 9</td>
+                <td>Vapeur d'eau</td>
+                <td>945 nm (60 m)</td>
+                <td id="band-9-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 10</td>
+                <td>Cirrus (SWIR)</td>
+                <td>1375 nm (60 m)</td>
+                <td id="band-10-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 11</td>
+                <td>SWIR 1 (Infrarouge à ondes courtes)</td>
+                <td>1610 nm (20 m)</td>
+                <td id="band-11-value">-</td>
+            </tr>
+            <tr>
+                <td>Bande 12</td>
+                <td>SWIR 2 (Infrarouge à ondes courtes)</td>
+                <td>2190 nm (20 m)</td>
+                <td id="band-12-value">-</td>
+            </tr>
+    </tbody>
+</table>
+
+        </div>
+    </div>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script src="{% static 'js/parcelViewing.js' %}"></script>
+{% endblock %}
