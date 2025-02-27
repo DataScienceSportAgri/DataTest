@@ -6,12 +6,13 @@ from django.conf import settings
 from PIL import Image
 from django.core.serializers.json import DjangoJSONEncoder
 import json
-
+import hashlib
+from uuid import uuid4
 
 
 
 class ParcelImageProcessor:
-    def __init__(self, date):
+    def __init__(self, date, gridcolumnsize, gridrowsize):
         self.date = date
         self.image_path = os.path.join(
             settings.STATIC_ROOT,
@@ -19,6 +20,8 @@ class ParcelImageProcessor:
             '12bands',
             f'{date}_S2A-12band.TIFF'
         )
+        self.gridrowsize = gridrowsize
+        self.gridcolumnsize = gridcolumnsize
         with rasterio.open(self.image_path) as src:
             self.bands = src.read()
             # Extraction des bandes RGB (4=Rouge, 3=Vert, 2=Bleu)
@@ -60,48 +63,98 @@ class ParcelImageProcessor:
         return relative_path
 
     def create_pixel_grid(self, band_index=1):
-        """Crée une grille de zones de 4x4 pixels pour la bande spécifiée"""
+        """Crée une grille de zones de 4x4 pixels avec ID unique"""
         self.current_band = self.bands[band_index]
         height, width = self.current_band.shape
         grid = []
-        for y in range(0, height, 4):
-            for x in range(0, width, 4):
-                # Garantir des nombres flottants valides
-                mean_val = float(np.mean(self.current_band[y:y + 4, x:x + 4]))
-                if np.isnan(mean_val) or np.isinf(mean_val):
-                    mean_val = 0.0  # Corriger les valeurs invalides
+
+
+        for y in range(0, height, self.gridrowsize):
+            for x in range(0, width, self.gridcolumnsize):
+                base_id = f"{x}-{y}-{self.gridrowsize}-{self.gridcolumnsize}"
+                unique_hash = hashlib.sha256(base_id.encode()).hexdigest()[:12]
+                cell_id = f"{unique_hash}-{uuid4().hex[:4]}"
+
+                mean_val = float(np.mean(self.current_band[y:y + self.gridrowsize, x:x + self.gridcolumnsize]))
+                mean_val = 0.0 if np.isnan(mean_val) or np.isinf(mean_val) else round(mean_val, 6)
 
                 grid.append({
-                    "coordinates": [int(x), int(y), int(x + 4), int(y + 4)],
-                    "mean_value": round(mean_val, 6)  # Limiter la précision
+                    "id": cell_id,  # ID unique ajouté ici
+                    "coordinates": [x, y, x + self.gridcolumnsize, y + self.gridrowsize],
+                    "mean_value": mean_val
                 })
 
-        # Sérialisation sécurisée
         return grid
 
     @staticmethod
     def serialize_grid(grid: list) -> str:
-        """Sérialisation finale pour le template"""
+        """Sérialise sans altérer l'ordre naturel"""
+        # Vérification des IDs uniques
+        seen = set()
+        if any((id := item['id']) in seen or seen.add(id) for item in grid):  # noqa: E731
+            raise ValueError("IDs dupliqués détectés")
+
         return json.dumps(
-            grid,
+            grid,  # Pas de tri - conservation de l'ordre original
             cls=DjangoJSONEncoder,
             ensure_ascii=False,
             allow_nan=False
         )
 
-    def get_zone_data(self, x, y):
-        """Calcule les moyennes des 12 bandes pour une zone 4x4"""
-        grid_x = (x // 4) * 4
-        grid_y = (y // 4) * 4
+    def get_grid_ids_and_data(self, raw_grid):
+        """Retourne les IDs + données brutes formatées pour la session"""
 
-        band_means = {}
-        for band_idx in range(self.bands.shape[0]):
-            mean_value = np.mean(self.bands[
-                                 band_idx,
-                                 grid_y:grid_y + 4,
-                                 grid_x:grid_x + 4
-                                 ])
-            band_means[f'Bande {band_idx + 1}'] = round(mean_value, 2)
+        return {
+            'ids': [cell['id'] for cell in raw_grid],
+            'data': {
+                cell['id']: {
+                    'coordinates': cell['coordinates'],
+                    'mean': cell['mean_value']
+                } for cell in raw_grid
+            }
+        }
 
-        return band_means
+    def get_zone_data(self, datacell):
+        x = datacell['coordinates'][0]
+        y = datacell['coordinates'][1]
+
+        grid_x = (x // self.gridcolumnsize) * self.gridcolumnsize
+        grid_y = (y // self.gridrowsize) * self.gridrowsize
+
+        return {
+            'coordinates': [
+                grid_x,
+                grid_y,
+                grid_x + self.gridcolumnsize,
+                grid_y + self.gridrowsize
+            ],
+            'bands': {
+                'band_1': round(
+                    np.mean(self.bands[0, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_2': round(
+                    np.mean(self.bands[1, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_3': round(
+                    np.mean(self.bands[2, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_4': round(
+                    np.mean(self.bands[3, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_5': round(
+                    np.mean(self.bands[4, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_6': round(
+                    np.mean(self.bands[5, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_7': round(
+                    np.mean(self.bands[6, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_8': round(
+                    np.mean(self.bands[7, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_8a': round(
+                    np.mean(self.bands[8, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_9': round(
+                    np.mean(self.bands[9, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_10': round(
+                    np.mean(self.bands[10, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_11': round(
+                    np.mean(self.bands[11, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2),
+                'band_12': round(
+                    np.mean(self.bands[12, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2)
+            }
+        }
 
