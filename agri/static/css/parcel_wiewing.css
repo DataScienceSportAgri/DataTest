@@ -21,6 +21,8 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+    display: grid;
+    grid-auto-flow: dense;
 }
 
 
@@ -42,7 +44,23 @@
     background: rgba(255,0,0,0.3);
 }
 
+#grid-container {
+    position: relative;
+    overflow: hidden;
+}
 
+.grid-wrapper {
+    pointer-events: none;
+    z-index: 2;
+}
+
+
+
+.grid-cell {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(0, 100, 200, 0.1);
+    pointer-events: auto; /* Permet l'interaction */
+}
 
 
 /* Reset des styles conflictuels */
