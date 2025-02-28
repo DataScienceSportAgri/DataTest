@@ -2,19 +2,23 @@ class ParcelViewer {
     constructor(containerId = 'grid-container') {
        this.container = document.getElementById(containerId);
        this.displayWidth = 800;
+       this.gridData = this.parseGridData();
        this.datePicker = document.getElementById('date-picker');
        this.currentDate = this.datePicker.value
+       this.gridOverlay = null
+
     // Initialiser les éléments critiques
-       this.initCriticalElements();
-       this.initializeImage();
        this.setupEventListeners();
+       this.image = document.getElementById('satellite-image');
+       this.initCriticalElements();
+       this.bandValues = document.getElementById('band-values-table');
+        // Initialiser la grille après ajustement des dimensions
+
+       this.initializeImage('grid-container', this.displayWidth, this.image);
 
     }
 
     initCriticalElements() {
-
-        this.image = document.getElementById('satellite-image');
-        this.bandValues = document.getElementById('band-values-table');
 
         if (!this.container || !this.datePicker || !this.image) {
             console.error('Éléments manquants:', {
@@ -27,7 +31,7 @@ class ParcelViewer {
     }
 
 
-     initializeImage() {
+     initializeImage(container, display, img) {
         console.log('Initializing image...');
 
         // Configuration de base de l'image
@@ -42,9 +46,8 @@ class ParcelViewer {
             this.container.style.height = `${displayHeight}px`;
             this.container.style.width = `${this.displayWidth}px`;
             this.container.style.position = 'relative';
+            this.gridOverlay = new GridOverlay(container, display, img, this.gridData);
 
-            // Initialiser la grille après ajustement des dimensions
-            this.gridOverlay = new GridOverlay('grid-container', this.displayWidth, this.image);
             console.log('parameters', this.gridOverlay.parameters)
             this.setupGridInteraction();
         };
@@ -57,54 +60,59 @@ class ParcelViewer {
     }
 
     setupGridInteraction() {
-        // Stocker la référence à la fonction throttled
+        let lastHighlightedId = null;
+
         const throttledHandler = _.throttle((e) => {
             const rect = this.gridOverlay.grid.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Utiliser requestAnimationFrame pour une mise à jour fluide
             requestAnimationFrame(() => {
                 const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.grid-cell');
 
                 if (cell && !this.gridOverlay.destroyed) {
-                    this.handleCellHover(cell, x, y);
+                    const cellId = cell.dataset.backendId;
+                    if (cellId !== lastHighlightedId) {
+                        this.handleCellHover(cellId);
+                        lastHighlightedId = cellId;
+                    }
                 } else {
                     this.resetHighlight();
+                    this.resetBandValues(); // Ajout ici pour les sorties rapides
+                    lastHighlightedId = null;
                 }
             });
-        }, 100); // Intervalle plus raisonnable (100ms au lieu de 10s)
+        }, 100);
 
-        // Gestionnaire d'événements unique
         this.gridOverlay.grid.addEventListener('mousemove', throttledHandler);
-        this.gridOverlay.grid.addEventListener('mouseleave', this.resetHighlight.bind(this));
+        this.gridOverlay.grid.addEventListener('mouseleave', () => {
+            this.resetHighlight();
+            this.resetBandValues(); // Ajout principal ici
+            lastHighlightedId = null;
+        });
 
-        // Nettoyage des anciens écouteurs
         this.cleanupGridInteractions = () => {
             this.gridOverlay.grid.removeEventListener('mousemove', throttledHandler);
             this.gridOverlay.grid.removeEventListener('mouseleave', this.resetHighlight);
         };
     }
 
-    handleCellHover(cell, x, y) {
+    handleCellHover(cellId) {
         try {
-            const cellId = cell.dataset.backendId;
-            if (!cellId) throw new Error('ID cellule manquant');
-
-            // Mise à jour synchrone des données
             this.updateZoneData(cellId);
-
-            // Highlight précis avec coordonnées relatives
-            this.highlightGridCell({
-                element: cell,
-                offsetX: x - cell.offsetLeft,
-                offsetY: y - cell.offsetTop
-            });
-
+            // Appel direct à la méthode du GridOverlay
+            this.gridOverlay.highlightCellById(cellId, 'rgba(255, 165, 0, 0.3)', 500);
         } catch (error) {
             console.error('Erreur hover:', error);
             this.resetHighlight();
         }
+    }
+
+    resetHighlight() {
+        // Réinitialisation de toutes les cellules highlightées
+        this.gridOverlay.grid.querySelectorAll('.grid-cell').forEach(cell => {
+            this.gridOverlay.highlightCellById(cell.id, 'rgba(0, 100, 200, 0.1)', 0);
+        });
     }
 
 
@@ -145,24 +153,17 @@ class ParcelViewer {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
-
+                console.log('data grid',data.pixel_grid)
                 // Mettre à jour l'image et réinitialiser la grille
                 this.image.src = STATIC_URL + data.rgb_image_path;
                 this.currentDate = date;
-                        // Création de la nouvelle grille avec les données serveur
-                this.gridOverlay = new GridOverlay(
-                    'grid-container',
-                    800,
-                    this.image,
-                    data.grid_element // Données provenant du serveur
-                );
+                this.gridData = this.updateGridData(data.pixel_grid)
+                this.initializeImage('grid-container', this.displayWidth, this.image, this.gridData)
                 this.resetBandValues();
         } catch (error) {
             console.error('Erreur lors du changement de date:', error);
         }
     }
-
-
 
     getCsrfToken() {
         return document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -199,6 +200,54 @@ class ParcelViewer {
         }
     }
 
+
+    parseGridData() {
+        console.log('Parsing grid data...');
+
+        const gridElement = document.querySelector('script[type="application/json"]#grid-data');
+
+        if (!gridElement) {
+            console.error('Element grid-data not found in the DOM.');
+            return [];
+        }
+
+        try {
+            const rawData = gridElement.textContent.trim();
+
+            if (!rawData) {
+            throw new Error('Grid data is empty.');
+        }
+        console.log('raw data', rawData)
+        const parsedData = JSON.parse(rawData);
+
+        console.log('Parsed grid data successfully:', parsedData);
+
+        return parsedData;
+
+        } catch (error) {
+            console.error('Error parsing grid data:', error);
+
+            return [];
+        }
+        const parsedData = JSON.parse(rawData);
+
+        // Vérification supplémentaire recommandée
+        const uniqueIds = new Set(parsedData.map(item => item.id));
+        if (uniqueIds.size !== parsedData.length) {
+            console.error('IDs dupliqués détectés !');
+            return [];
+        }
+        console.log('parsed data',parsedData)
+        return parsedData;
+    }
+
+    updateGridData (rawData) {
+        const parsedData = JSON.parse(rawData);
+        return parsedData
+    }
+
+
+
     displayBandValues(data) {
         // Mise à jour des valeurs de bandes
         for (let bandNum = 1; bandNum <= 12; bandNum++) {
@@ -209,35 +258,22 @@ class ParcelViewer {
         }
     }
 
-    highlightGridCell({ element, offsetX, offsetY }) {
-        // Supprimer l'ancien highlight en une seule opération
-        const currentHighlighted = this.gridOverlay.grid.querySelector('.highlighted');
-        currentHighlighted?.classList.remove('highlighted');
+    resetBandValues() {
+        // Cibler uniquement les cellules de valeur dans le tableau spécifique
+        const table = document.getElementById('band-values-table');
+        const valueCells = table.querySelectorAll('tbody td[id^="band-"][id$="-value"]');
 
-        // Ajouter le nouveau highlight avec style optimisé
-        if (element) {
-            element.classList.add('highlighted');
-            element.style.setProperty('--hover-x', `${offsetX}px`);
-            element.style.setProperty('--hover-y', `${offsetY}px`);
+        // Réinitialisation sécurisée avec vérification d'existence
+        if (valueCells.length > 0) {
+            valueCells.forEach(cell => {
+                cell.textContent = '-';
+                cell.classList.remove('calculated-value'); // Supprime les classes liées au calcul
+            });
+        } else {
+            console.warn('Aucune cellule de valeur trouvée dans le tableau');
         }
     }
 
-    resetHighlight() {
-        this.gridOverlay.grid.querySelectorAll('.highlighted').forEach(cell => {
-            cell.classList.remove('highlighted');
-        });
-        this.resetBandValues();
-    }
-
-    resetBandValues() {
-        // Sélectionner toutes les cellules de la colonne "Valeur Moyenne"
-        const valueCells = document.querySelectorAll('[id^="band-"][id$="-value"]');
-
-        // Réinitialiser chaque cellule à un tiret ou une valeur par défaut
-        valueCells.forEach(cell => {
-            cell.textContent = '-';
-        });
-    }
 }
 
 
@@ -310,45 +346,6 @@ class GridOverlay {
         this.calculateGridLayout();
     }
 
-    parseGridData() {
-        console.log('Parsing grid data...');
-
-        const gridElement = document.querySelector('script[type="application/json"]#grid-data');
-
-        if (!gridElement) {
-            console.error('Element grid-data not found in the DOM.');
-            return [];
-        }
-
-        try {
-            const rawData = gridElement.textContent.trim();
-
-            if (!rawData) {
-                throw new Error('Grid data is empty.');
-            }
-
-            const parsedData = JSON.parse(rawData);
-
-            console.log('Parsed grid data successfully:', parsedData);
-
-            return parsedData;
-
-            } catch (error) {
-                console.error('Error parsing grid data:', error);
-
-            return [];
-        }
-        const parsedData = JSON.parse(rawData);
-
-        // Vérification supplémentaire recommandée
-        const uniqueIds = new Set(parsedData.map(item => item.id));
-        if (uniqueIds.size !== parsedData.length) {
-            console.error('IDs dupliqués détectés !');
-            return [];
-        }
-
-        return parsedData;
-    }
 
     calculateGridParameters() {
 
@@ -646,6 +643,29 @@ class GridOverlay {
             positions.push(positions[i] + sizes[i]);
         }
         return positions;
+    }
+
+    highlightCellById(id, color = 'rgba(255, 0, 0, 0.3)', duration = 2000) {
+        const cell = document.getElementById(id);
+        if (!cell) {
+            console.error(`Cellule avec l'ID ${id} introuvable`);
+            return;
+        }
+
+        // Sauvegarde la couleur originale
+        const originalColor = cell.style.backgroundColor;
+
+        // Applique la nouvelle couleur
+        cell.style.backgroundColor = color;
+        console.log(`Cellule ${id} highlightée en ${color}`);
+
+        // Réinitialisation après la durée spécifiée
+        if (duration > 0) {
+            setTimeout(() => {
+                cell.style.backgroundColor = originalColor;
+                console.log(`Réinitialisation de la couleur pour ${id}`);
+            }, duration);
+        }
     }
 
 }

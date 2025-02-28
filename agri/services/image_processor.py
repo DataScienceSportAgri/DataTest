@@ -8,6 +8,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 import json
 import hashlib
 from uuid import uuid4
+import secrets
+import time
 
 
 
@@ -31,6 +33,25 @@ class ParcelImageProcessor:
 
             # Normalisation des bandes
             self.rgb = self.create_rgb_image()
+
+    def generate_cell_id(self, x, y, gridrowsize, gridcolumnsize):
+        # Seed aléatoire cryptographique
+        random_seed = secrets.token_hex(8)  # 16 caractères hexadécimaux
+
+        # Timestamp haute précision
+        timestamp = str(time.time_ns())  # Précision nanoseconde
+
+        # Combinaison multi-source
+        base_id = f"{x}-{y}-{gridrowsize}-{gridcolumnsize}-{random_seed}-{timestamp}"
+
+        # Hashage avec sel dynamique
+        unique_hash = hashlib.sha3_256(f"{base_id}{os.urandom(16)}".encode()).hexdigest()[:16]
+
+        # Combinaison aléatoire finale
+        crypto_rand = secrets.token_bytes(4).hex()
+        uuid_part = uuid4().hex[:6]
+
+        return f"{unique_hash}-{crypto_rand}-{uuid_part}"
 
     def create_rgb_image(self):
         """Crée une image RGB normalisée"""
@@ -71,9 +92,7 @@ class ParcelImageProcessor:
         print('test', height, width)
         for y in range(0, height, self.gridrowsize):
             for x in range(0, width, self.gridcolumnsize):
-                base_id = f"{x}-{y}-{self.gridrowsize}-{self.gridcolumnsize}"
-                unique_hash = hashlib.sha256(base_id.encode()).hexdigest()[:12]
-                cell_id = f"{unique_hash}-{uuid4().hex[:4]}"
+                cell_id = self.generate_cell_id( x, y, self.gridrowsize, self.gridcolumnsize)
 
                 mean_val = float(np.mean(self.current_band[y:y + self.gridrowsize, x:x + self.gridcolumnsize]))
                 mean_val = 0.0 if np.isnan(mean_val) or np.isinf(mean_val) else round(mean_val, 6)
