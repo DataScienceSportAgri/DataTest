@@ -316,7 +316,6 @@ class VitesseDistributionView(TemplateView):
         mode = 'rien'
         try:
             mode = self.request.GET.get('mode')  # Par défaut : classique
-            print('méthode get fonctionnelle :',mode)
         except:
             print('méthode get fonctionnelle error')
         if mode != 'classique' and mode != 'simplifie':
@@ -326,7 +325,6 @@ class VitesseDistributionView(TemplateView):
                 print('méthode get non fonctionnelle. Méthode post :', mode)
             except:
                 mode = 'classique'
-        print('type de mode :',type(mode))
         if type(mode) is str:
             if mode == 'simplifie':
                 categories = CategorieSimplifiee.objects.values('nom', 'sexe').distinct()
@@ -338,7 +336,6 @@ class VitesseDistributionView(TemplateView):
             categories = Categorie.objects.values('nom', 'sexe').distinct()
         min_distance = 5000
         max_distance = 10000
-        print('mode',mode)
         # Convertir en liste de dictionnaires
         categories_list = [{'nom': cat['nom'], 'sexe': cat['sexe'] or 'Unknown'} for cat in categories]
         type_list = ['Course sur route', 'Foulee']
@@ -353,17 +350,13 @@ class VitesseDistributionView(TemplateView):
 
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
-                    print('typelist',post_data.get("course_types", "['Course sur route', 'Foulee']"), type(post_data.get("course_types", "['Course sur route', 'Foulee']")))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
                     colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
-                    print('used new arg :', min_distance, max_distance, type_list, colors, series_categories)
                 except json.JSONDecodeError:
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
-            print('type de liste', type(type_list))
             course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
-            print('course type ids',course_type_ids)
             initial_results = ResultatCourse.objects.filter(
                 Q(course__type__in=course_type_ids) &
                 Q(course__distance__gte=min_distance) &
@@ -372,7 +365,6 @@ class VitesseDistributionView(TemplateView):
                 annee_course=F('course__annee'),
                 distance_course = F('course__distance')
             ).values('id', 'temps', 'annee_course', 'distance_course','coureur_id').order_by('?')[:1000]
-            print('len de initial_results', len(initial_results))
             # Conversion en DataFrame
             results_df = pd.DataFrame(list(initial_results))
             # Sous-requête pour obtenir la catégorie correspondante
@@ -416,8 +408,6 @@ class VitesseDistributionView(TemplateView):
                 'nom_categorie': noms_categories
             })
 
-            print(df)
-
 
         elif mode == 'simplifie':
             if request and request.method == 'POST':
@@ -431,7 +421,6 @@ class VitesseDistributionView(TemplateView):
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []},
                                                        "M": {"sexe": ["M"], "nom": []}})
-                    print('used new arg :', min_distance, max_distance, type_list, colors, series_categories)
                 except json.JSONDecodeError:
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
             course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
@@ -492,10 +481,8 @@ class VitesseDistributionView(TemplateView):
                 'nom_categorie': noms_categories
             })
 
-            print(df)
 
         else:
-            print('mode non reconnu', mode)
             return 'error'
         total_count = ResultatCourse.objects.filter(
             Q(course__type__in=course_type_ids) &
@@ -505,7 +492,6 @@ class VitesseDistributionView(TemplateView):
 
         # Utilisation des fonctions
         filtered_dataframes = self.filter_by_series(df, series_categories)
-        print('filtered dataframes',filtered_dataframes)
         stats = self.calculate_stats(filtered_dataframes)
 
         # Stocker ces données dans la session
@@ -523,7 +509,6 @@ class VitesseDistributionView(TemplateView):
         context['max_distance'] = max_distance
         context['refresh_interval'] = 25000
         context['type_list'] = type_list
-        print('stats',stats)
         context['stats'] = stats
         context['series_categories'] = series_categories
         context['categories'] = json.dumps(categories_list)
@@ -540,18 +525,18 @@ class VitesseDistributionView(TemplateView):
 
     def get_updated_data(self, request):
         print("Received update request from client")
-        print('request.method', request.method)
+
         if request.method == 'POST':
             mode = self.request.session['mode']
-            print('mode',mode)
+
             if mode == 'classique':
                 try:
-                    print('test')
+
                     vitesses = self.request.session.get('vitesses')
                     distances = self.request.session.get('distances')
                     loaded_ids = set(request.session.get('loaded_ids', []))
                     post_data = json.loads(request.body)
-                    print('post_data',post_data)
+
                     min_distance = int(post_data.get('minDistance', 5000))
                     max_distance = int(post_data.get('maxDistance', 10000))
                     loaded_count = int(post_data.get('loaded_count', 0))
@@ -561,20 +546,15 @@ class VitesseDistributionView(TemplateView):
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
                 except json.JSONDecodeError:
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
-                print(type(series_categories))
-                print(series_categories)
+
                 course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
                 selected_categories = request.GET.getlist('categories')
-                print('min distance : ', min_distance)
-                print('max distance : ', max_distance)
-                print('loaded count : ', loaded_count)
                 # Obtenir le nombre total de résultats correspondant aux filtres
                 total_count = ResultatCourse.objects.filter(
                     Q(course__type__in=course_type_ids) &
                     Q(course__distance__gte=min_distance) &
                     Q(course__distance__lte=max_distance)
                 ).count()
-                print(total_count)
                 # Récupérer les IDs déjà chargés
                 # Filtrer les résultats déjà chargés qui correspondent toujours aux critères
                 still_valid_ids = set(ResultatCourse.objects.filter(
@@ -634,7 +614,6 @@ class VitesseDistributionView(TemplateView):
                 df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
 
             elif mode == 'simplifie':
-                print('test')
                 try:
                     vitesses = self.request.session.get('vitesses')
                     distances = self.request.session.get('distances')
@@ -652,8 +631,6 @@ class VitesseDistributionView(TemplateView):
                     return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
                 course_type_ids = list(CourseType.objects.filter(nom__in=type_list).values_list('id', flat=True))
                 selected_categories = request.GET.getlist('categories')
-                print('selected categories',selected_categories)
-                print('selected categories', series_categories)
                 total_count = ResultatCourse.objects.filter(
                     Q(course__type__in=course_type_ids) &
                     Q(course__distance__gte=min_distance) &
@@ -686,19 +663,16 @@ class VitesseDistributionView(TemplateView):
                 ).order_by('?')[:remaining_count]  # Optimise les jointures pour éviter plusieurs requêtes
                 # Conversion en DataFrame
                 results_df = pd.DataFrame(list(new_results))
-                print('resultsdf',results_df)
                 # Créer un DataFrame pour still_valid_ids
                 still_valid_results = ResultatCourse.objects.filter(id__in=still_valid_ids).annotate(
                     distance_course=F('course__distance')
                 ).values('id', 'temps',  'categorie__categoriesimplifiee__sexe', 'distance_course', 'categorie__categoriesimplifiee__nom', 'course__type')
 
                 still_valid_df = pd.DataFrame(list(still_valid_results))
-                print('len de still valid df', len(still_valid_df))
                 combined_df = pd.concat([results_df, still_valid_df], keys=['new', 'still_valid'], ignore_index=False)
                 combined_df = combined_df.reset_index(level=0).rename(columns={'level_0': 'source'})
 
                 combined_df['vitesse'] = combined_df['distance_course'] / combined_df['temps'].dt.total_seconds() * 3.6
-                print('len de combined df', len(combined_df))
                 df = combined_df[['id', 'vitesse', 'distance_course', 'categorie__categoriesimplifiee__sexe', 'categorie__categoriesimplifiee__nom']]
                 df.columns = ['id', 'vitesse', 'distance', 'sexe', 'nom_categorie']
             else:
@@ -952,6 +926,3 @@ class VitesseDistributionView(TemplateView):
                           violinmode="group")
 
         return fig.to_html(full_html=False)
-
-
-

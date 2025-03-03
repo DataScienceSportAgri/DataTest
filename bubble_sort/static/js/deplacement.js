@@ -72,7 +72,6 @@ function saveBubbleData(bubble, field, value) {
             'X-Requested-With': 'XMLHttpRequest'
         },
         success: function(response) {
-            console.log(`${field} sauvegardé avec succès`);
         },
         error: function(xhr, status, error) {
             console.error(`Erreur lors de la sauvegarde du ${field}:`, error);
@@ -212,10 +211,6 @@ function elementsOverlap(element1, element2, threshold = 20) {
         console.error("jQuery UI n'est pas chargé correctement");
         return;
     }
-    console.log("Début de elementsOverlap");
-    console.log("element1:", element1);
-    console.log("element2:", element2);
-    console.log("threshold:", threshold);
 
     // Vérification du type des éléments
     if (!(element1 instanceof jQuery) || !(element2 instanceof jQuery)) {
@@ -227,9 +222,6 @@ function elementsOverlap(element1, element2, threshold = 20) {
     const el1 = element1.get(0);
     const el2 = element2.get(0);
 
-    console.log("el1 (DOM):", el1);
-    console.log("el2 (DOM):", el2);
-
     if (!el1 || !el2) {
         console.error("Un des éléments est null ou undefined");
         return false;
@@ -239,8 +231,6 @@ function elementsOverlap(element1, element2, threshold = 20) {
     const rect1 = el1.getBoundingClientRect();
     const rect2 = el2.getBoundingClientRect();
 
-    console.log("rect1:", rect1);
-    console.log("rect2:", rect2);
 
     // Calcul du chevauchement
     const overlap = !(
@@ -249,8 +239,6 @@ function elementsOverlap(element1, element2, threshold = 20) {
         rect1.bottom < rect2.top + threshold ||
         rect1.top > rect2.bottom - threshold
     );
-
-    console.log("Chevauchement détecté:", overlap);
 
     return overlap;
 }

@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
     {% load static %}
+    {% load plotly_dash %}
+    <head>
+    {% plotly_header %}
+
+</head>
     {% csrf_token %}
     <script>
     const STATIC_URL = '{% static "" %}';
 </script>
+        <link rel="stylesheet" href="{% static 'css/parcel_wiewing.css' %}">
+    <section>
+    <div id="col1">
     <div class="parcel-viewer">
 
         <!-- Ajouter un conteneur dédié avec ID explicite -->
@@ -14,6 +22,7 @@
                     <img id="satellite-image" src="{% static rgb_image_path %}" alt="Parcel view">
                 </div>
             </div>
+        </div>
                     <div class="date-selector">
             <select id="date-picker">
                 {% for date in dates %}
@@ -22,7 +31,7 @@
                     </option>
                 {% endfor %}
             </select>
-        </div>
+
             <script type="application/json" id="grid-data">
                 {{ pixel_grid|safe }}
             </script>
@@ -122,6 +131,14 @@
 
         </div>
     </div>
-        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    </div>
+<div id="col2">
+    <h2>NDVI 3d Plot</h2>
+    <iframe src="{% url 'ndvi_view' %}" width="100%" height="1250px" frameborder="0"></iframe>
+</div>
+</section>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <script src="{% static 'js/parcelViewing.js' %}"></script>
+
+    {% plotly_footer %}
 {% endblock %}

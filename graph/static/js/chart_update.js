@@ -1,5 +1,4 @@
-console.log(window.isRefreshing);
-console.log('chart_update.js loaded');
+
 
 function getCookie(name) {
     let cookieValue = null;
@@ -32,7 +31,6 @@ function updateGraph(newData) {
     }
 
     if (typeof Plotly !== 'undefined') {
-        console.log("Plotly est correctement chargé");
         Plotly.react('chart-container', newData.data, newData.layout);
     } else {
         console.error("Plotly n'est pas chargé correctement");
@@ -41,7 +39,6 @@ function updateGraph(newData) {
 
 function postUpdates() {
 window.isRefreshing = true;
-  console.log('Sending update request to server');
 
   // Récupérer le jeton CSRF
   let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -53,14 +50,11 @@ window.isRefreshing = true;
     console.error('CSRF token not found. Request may fail.');
   }
 
-  console.log('window.chartConfig', chartConfig)
-
 
   var selectedCourseTypes = Array.isArray(chartConfig.typeList)
       ? window.chartConfig.typeList
       : [window.chartConfig.typeList];
 
-  console.log('Types de courses sélectionnés:', selectedCourseTypes);
   // Préparer les données à envoyer
   const data = {
     action: 'update',
@@ -70,12 +64,9 @@ window.isRefreshing = true;
     course_types: chartConfig.typeList,
     loaded_count: chartConfig.loadedCount
   };
-  console.log('nouvelles données envoyées au serveur', data)
 
   // Convertir l'objet en chaîne JSON
   const jsonData = JSON.stringify(data);
-
-  console.log('après filtration', jsonData)
 
   // Effectuer la requête POST
   return fetch('/graph/vitesse-distribution/', {
@@ -94,7 +85,6 @@ window.isRefreshing = true;
     return response.json();
   })
   .then(data => {
-    console.log("Succès d'update':", data);
 
     // Mettre à jour le graphique
     updateGraph(data.plot_data);
@@ -137,7 +127,6 @@ window.isRefreshing = true;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Setting up periodic updates');
-    console.log('info' + window.chartConfig.refreshInterval);
 
     updateCountdown({
         countdown: Math.floor(window.chartConfig.refreshInterval / 1000),

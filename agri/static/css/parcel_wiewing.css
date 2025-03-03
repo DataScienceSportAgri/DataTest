@@ -1,80 +1,29 @@
-.image-container {
-    position: relative;
-    width: 800px;
-    height: 600px;
-    overflow: hidden;
-    isolation: isolate; /* Nouveau contexte d'empilement */
-}
-
-#satellite-image {
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.grid-overlay {
-    z-index: 2;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    display: grid;
-    grid-auto-flow: dense;
-}
-
-
-.grid-cell {
-    transition: all 0.2s ease;
-    mix-blend-mode: multiply;
-}
-
-/* Solution pour .hover-zone */
-.hover-zone {
-    position: absolute; /* Garder absolute */
-    pointer-events: auto;
-    transition: all 0.2s ease;
-}
-
-/* Supprimer les !important inutiles */
-.hover-zone:hover {
-    border: 2px solid #ff0000;
-    background: rgba(255,0,0,0.3);
-}
-
-#grid-container {
-    position: relative;
-    overflow: hidden;
-}
-
-.grid-wrapper {
-    pointer-events: none;
-    z-index: 2;
-}
-
-
-
-.grid-cell {
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background-color: rgba(0, 100, 200, 0.1);
-    pointer-events: auto; /* Permet l'interaction */
-}
-
-
-/* Reset des styles conflictuels */
-* {
-    box-sizing: border-box;
+body, html {
+    height: 100%; /* Assure que tout peut s'étendre à 100% de la fenêtre */
     margin: 0;
     padding: 0;
 }
+section {
+    display: flex; /* Active le mode Flexbox */
+    width: 100%; /* Assure que le conteneur occupe toute la largeur */
+}
 
+#col1, #col2 {
+    flex: 1; /* Les deux colonnes occupent une part égale */
+    box-sizing: border-box; /* Inclut les marges et bordures dans la largeur totale */
+}
 
+#col2 {
+    flex: 3; /* Donne plus d'espace à la colonne contenant l'iframe */
+}
 
-
+#col2 iframe {
+    width: 100%; /* L'iframe occupe toute la largeur de la colonne */
+    height: 100%; /* L'iframe occupe toute la hauteur de la colonne */
+    border: none;
+}
 .band-info-panel {
-    width: 250px;
+    width: 700px;
     padding: 15px;
     background: #f5f5f5;
     border-radius: 5px;
@@ -89,11 +38,12 @@
     border-bottom: 1px solid #ddd;
 }
 
-
-
-
+/* Tableau des bandes */
 .band-info-panel {
     margin-top: 20px;
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
 }
 
 #band-values-table {
@@ -113,21 +63,4 @@
 
 #band-values-table td {
     text-align: center;
-}
-
-.grid-cell.highlighted {
-    position: relative;
-    background: rgba(255,220,0,0.3);
-    transition: background 0.2s ease;
-}
-
-.grid-cell.highlighted::after {
-    content: '';
-    position: absolute;
-    left: var(--hover-x, 0);
-    top: var(--hover-y, 0);
-    width: 20px;
-    height: 20px;
-    background: radial-gradient(circle, yellow 0%, transparent 70%);
-    transform: translate(-50%, -50%);
 }

@@ -57,8 +57,5 @@ const chartConfig = {
 // Rendre les variables globales si nécessaire
 window.chartConfig = chartConfig;
 
-// Exemple d'utilisation
-console.log('Configuration du graphique:', chartConfig);
-console.log('Configuration du graphique avec window:', window.chartConfig);
 // Ici, vous pouvez ajouter le code pour initialiser et configurer votre graphique
 // en utilisant les valeurs de chartConfig

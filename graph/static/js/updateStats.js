@@ -16,29 +16,22 @@ function extractKeys(stats) {
 }
 
 function updateDistanceStats(distanceStats, keys) {
-    console.log('Updating distance stats:', distanceStats);
-    console.log('Distance keys:', keys);
+
 
     const $container = $('.distances-container');
-    console.log('Distance container found:', $container.length);
 
     if ($container.length) {
         const $table = $container.find('table');
-        console.log('Distance table found:', $table.length);
 
         if ($table.length) {
             keys.forEach(key => {
-                console.log(`Updating distance stat: ${key}`);
                 const $row = $table.find(`tr[data-key="${key}"]`);
-                console.log(`Row for ${key} found:`, $row.length);
 
                 if ($row.length) {
                     const $valueCell = $row.find('td:last-child');
-                    console.log(`Value cell for ${key} found:`, $valueCell.length);
 
                     if ($valueCell.length) {
                         const newValue = formatStatValue(key, distanceStats[key], 'distances');
-                        console.log(`Updating ${key} with value:`, newValue);
                         $valueCell.text(newValue);
                     }
                 }
@@ -48,38 +41,26 @@ function updateDistanceStats(distanceStats, keys) {
 }
 
 function updateVitesseStats(vitesseStats, keys, series) {
-    console.log('Updating vitesse stats:', vitesseStats);
-    console.log('Vitesse keys:', keys);
-    console.log('Vitesse series:', series);
 
     const $container = $('.vitesses-container');
-    console.log('Vitesse container found:', $container.length);
 
     if ($container.length) {
         series.forEach(serieName => {
-            console.log(`Updating serie: ${serieName}`);
             const serieStats = vitesseStats[serieName];
             const $serieSection = $container.find(`.stats-flex-container:has(h5:contains("${serieName}"))`);
-            console.log(`Serie section for ${serieName} found:`, $serieSection.length);
 
             if ($serieSection.length) {
                 const $table = $serieSection.find('table');
-                console.log(`Table for ${serieName} found:`, $table.length);
 
                 if ($table.length) {
                     keys.forEach(key => {
-                        console.log(`Updating stat ${key} for serie ${serieName}`);
                         const $row = $table.find(`tr[data-key="${key}"]`);
-
-                        console.log(`Row for ${key} in ${serieName} found:`, $row.length);
 
                         if ($row.length) {
                             const $valueCell = $row.find('td:last-child');
-                            console.log(`Value cell for ${key} in ${serieName} found:`, $valueCell.length);
 
                             if ($valueCell.length) {
                                 const newValue = formatStatValue(key, serieStats[key], 'vitesses');
-                                console.log(`Updating ${key} in ${serieName} with value:`, newValue);
                                 $valueCell.text(newValue);
                             }
                         }

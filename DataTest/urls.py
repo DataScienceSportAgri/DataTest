@@ -15,12 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
+import dash_bootstrap_components as dbc
 from django.contrib import admin
 from django.urls import include, path
 from . import views
 from django.contrib.auth import views as auth_views
-
+from django_plotly_dash import DjangoDash
+from django.conf import settings
+from django.conf.urls.static import static
+# Configuration Dash
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -38,4 +41,5 @@ urlpatterns = [
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('dash/', include('django_plotly_dash.urls', namespace='django_plotly_dash')),
 ]

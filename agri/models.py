@@ -8,9 +8,9 @@ class SatelliteImage:
     def __init__(self, date):
         self.date = date
         # Chemin vers l'image TIFF multi-bandes
-        self.tiff_path = os.path.join('satellite_data', '12bands', f'{date}_S2A-12band.TIFF')
+        self.tiff_path = os.path.join('satellite_data', 'Boulinsard', '12bands', f'{date}_S2A-12band.TIFF')
         # Chemin vers l'image lai
-        self.lai_path = os.path.join('satellite_data', 'lai', f'{date}_LAI.jpg')
+        self.lai_path = os.path.join('satellite_data', 'Boulinsard', 'lai', f'{date}_LAI.jpg')
 
     def get_band(self, band_index):
         """Récupère une bande spécifique de l'image TIFF"""
@@ -24,7 +24,7 @@ class Parcel(models.Model):
 
     def get_available_dates(self):
         """Récupère les dates disponibles en parcourant le dossier"""
-        tiff_dir = os.path.join(settings.STATIC_ROOT, 'satellite_data', '12bands')
+        tiff_dir = os.path.join(settings.STATIC_ROOT, 'satellite_data','Boulinsard', '12bands')
         dates = []
         for file in os.listdir(tiff_dir):
             if file.endswith('12band.TIFF'):

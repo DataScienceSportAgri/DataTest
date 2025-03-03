@@ -10,15 +10,22 @@ import hashlib
 from uuid import uuid4
 import secrets
 import time
-
+import tifffile
+from datetime import datetime
+import dash
+from dash import dcc, html
+from django_plotly_dash import DjangoDash
+import plotly.graph_objects as go
 
 
 class ParcelImageProcessor:
-    def __init__(self, date, gridcolumnsize, gridrowsize):
+    def __init__(self, date, gridcolumnsize, gridrowsize, parcel_path):
         self.date = date
+        self.parcel_path = parcel_path
         self.image_path = os.path.join(
             settings.STATIC_ROOT,
             'satellite_data',
+            parcel_path,
             '12bands',
             f'{date}_S2A-12band.TIFF'
         )
@@ -71,7 +78,7 @@ class ParcelImageProcessor:
 
     def save_rgb_image(self):
         """Sauvegarde l'image RGB au format JPEG"""
-        output_dir = os.path.join(settings.STATICFILES_DIRS[1], 'satellite_data', 'rgb_output')
+        output_dir = os.path.join(settings.STATICFILES_DIRS[1], 'satellite_data', self.parcel_path, 'rgb_output')
         os.makedirs(output_dir, exist_ok=True)
 
         output_path = os.path.join(output_dir, f'{self.date}_rgb.jpg')
@@ -88,8 +95,6 @@ class ParcelImageProcessor:
         self.current_band = self.bands[band_index]
         height, width = self.current_band.shape
         grid = []
-
-        print('test', height, width)
         for y in range(0, height, self.gridrowsize):
             for x in range(0, width, self.gridcolumnsize):
                 cell_id = self.generate_cell_id( x, y, self.gridrowsize, self.gridcolumnsize)
@@ -176,4 +181,6 @@ class ParcelImageProcessor:
                     np.mean(self.bands[12, grid_y:grid_y + self.gridrowsize, grid_x:grid_x + self.gridcolumnsize]), 2)
             }
         }
+
+
 

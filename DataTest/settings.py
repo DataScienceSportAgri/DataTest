@@ -9,22 +9,31 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import sys
 from pathlib import Path
 import os
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent  # Définition standard
+print(type(BASE_DIR))  # Doit afficher <class 'pathlib.WindowsPath'> ou
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000']
+VENV_PATH = sys.prefix  # Chemin de l'environnement virtuel
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'node_modules'),
     #os.path.join(BASE_DIR, 'graph','static'),
     #os.path.join(BASE_DIR, 'bubble_sort','static'),
+    os.path.join(BASE_DIR, 'dash_apps/static'),  # Static files for iframe-based Dash app
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'agri', 'static'),  # Chemin vers le dossier static de l'app
-]
+    os.path.join(VENV_PATH, 'Lib/site-packages/django_plotly_dash/static'),
 
+]
+COMPRESS_ENABLED = False
+PLOTLY_DASH = {
+    'cache_timeout': 3600,
+    'storage_type': 'session',
+    'http_poke_interval': 30
+}
 # Ajout des configurations CORS
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -33,9 +42,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder'
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'django_plotly_dash.finders.DashAssetFinder',
+    'django_plotly_dash.finders.DashComponentFinder',
+    'django_plotly_dash.finders.DashAppDirectoryFinder',
+    'compressor.finders.CompressorFinder',  # Ajoutez ceci pour le support de compression
 ]
-
 NPM_FILE_PATTERNS = {
     'plotly.js-dist': ['plotly.js']
 }
@@ -69,26 +81,35 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bubble_sort.apps.BubbleSortConfig',
     'agri.apps.AgriConfig',
+    'django_plotly_dash.apps.DjangoPlotlyDashConfig',  # Exact config name
+    'dpd_static_support'  # Required for static files
 ]
+# Add this line below STATIC_URL
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Doit être en 2ème position
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'graph.middleware.InitSessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'django_plotly_dash.middleware.ExternalRedirectionMiddleware',  # Conserver
+    'django_plotly_dash.middleware.BaseMiddleware',  # Conserver
 ]
-
 ROOT_URLCONF = 'DataTest.urls'
 
+PLOTLY_COMPONENTS = [
+    'dpd_static_support',
+    'dash_core_components',
+    'dash_html_components',
+    'dash_renderer',
+]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
+        'DIRS': [BASE_DIR / 'templates']  # Fonctionne si BASE_DIR est un objet Path
         ,
         'APP_DIRS': True,
         'OPTIONS': {

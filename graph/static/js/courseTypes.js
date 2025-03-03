@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Mettre à jour chartConfig.typeList
         window.chartConfig.typeList = Array.from(document.querySelectorAll('#course-types input[type="checkbox"]:checked')).map(cb => cb.value);
-        console.log(window.chartConfig.typeList);
       });
     });
   }

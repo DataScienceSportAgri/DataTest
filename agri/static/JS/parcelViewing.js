@@ -1,5 +1,14 @@
+
 class ParcelViewer {
     constructor(containerId = 'grid-container') {
+        // Définir les gestionnaires comme propriétés de classe
+    this.globalHandler = (event) => {
+        console.log('Global mouse movement:', event.clientX, event.clientY);
+    };
+
+    this.gridHandler = (event) => {
+        console.log('Grid mouse movement:', event.clientX, event.clientY);
+    };
        this.container = document.getElementById(containerId);
        this.displayWidth = 800;
        this.gridData = this.parseGridData();
@@ -673,7 +682,6 @@ class GridOverlay {
 
 
 
-// Vérification de Lodash
 function checkLodash() {
     if (typeof _ === 'undefined') {
         console.error('Lodash not loaded');
@@ -688,6 +696,3 @@ document.addEventListener('DOMContentLoaded', () => {
         new ParcelViewer('grid-container');
     }
 });
-
-
-

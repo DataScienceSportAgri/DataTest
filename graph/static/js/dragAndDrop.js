@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const rawData = document.getElementById('categories').textContent;
     const categoriesData = JSON.parse(JSON.parse(rawData));
 
-    console.log('Double parsed data:', categoriesData);
-    console.log('Is array after double parsing:', Array.isArray(categoriesData));
     allCategorieDiv = document.getElementById('all_categorie');
     const selectedCategorieDiv = document.getElementById('categorie_selected');
 
@@ -49,7 +47,6 @@ function drop(e) {
 
     function updateSelectedCategories() {
         const selectedCategories = Array.from(selectedCategorieDiv.children).map(box => box.textContent);
-        console.log('Catégories sélectionnées:', selectedCategories);
         // Vous pouvez utiliser 'selectedCategories' comme variable pour votre eventListener 'selectcategories'
     }
 });
