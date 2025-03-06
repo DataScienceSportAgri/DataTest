@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     {% load static %}
-    {% load plotly_dash %}
     <head>
-    {% plotly_header %}
 
 </head>
     {% csrf_token %}
@@ -140,5 +138,4 @@
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <script src="{% static 'js/parcelViewing.js' %}"></script>
 
-    {% plotly_footer %}
 {% endblock %}

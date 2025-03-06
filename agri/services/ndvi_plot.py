@@ -18,7 +18,7 @@ def extract_date_from_filename(filepath):
     return datetime.strptime(date_str, '%Y-%m-%d').date()
 
 def create_ndvi_cube():
-    path = r'C:\Users\33682\PycharmProjects\DataTest\agri\static\satellite_data\Boulinsard\12bands'
+    path = os.path.join(settings.BASE_DIR, 'agri', 'static', 'satellite_data', 'Boulinsard', '12bands')
     imgs_list = glob.glob(os.path.join(path, "*.TIFF"))
     # Trier les images par date
     filenames = [os.path.basename(img) for img in imgs_list]

@@ -12,9 +12,7 @@ import secrets
 import time
 import tifffile
 from datetime import datetime
-import dash
-from dash import dcc, html
-from django_plotly_dash import DjangoDash
+
 import plotly.graph_objects as go
 
 

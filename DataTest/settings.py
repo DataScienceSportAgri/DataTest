@@ -43,10 +43,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'django_plotly_dash.finders.DashAssetFinder',
-    'django_plotly_dash.finders.DashComponentFinder',
-    'django_plotly_dash.finders.DashAppDirectoryFinder',
-    'compressor.finders.CompressorFinder',  # Ajoutez ceci pour le support de compression
 ]
 NPM_FILE_PATTERNS = {
     'plotly.js-dist': ['plotly.js']
@@ -81,22 +77,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bubble_sort.apps.BubbleSortConfig',
     'agri.apps.AgriConfig',
-    'django_plotly_dash.apps.DjangoPlotlyDashConfig',  # Exact config name
-    'dpd_static_support'  # Required for static files
 ]
 # Add this line below STATIC_URL
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Doit être en 2ème position
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django_plotly_dash.middleware.ExternalRedirectionMiddleware',  # Conserver
-    'django_plotly_dash.middleware.BaseMiddleware',  # Conserver
 ]
 ROOT_URLCONF = 'DataTest.urls'
 
