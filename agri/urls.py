@@ -9,5 +9,5 @@ from django_plotly_dash import DjangoDash
 urlpatterns = [
     path('', views.home, name='app_presentation'),
     path('demo/', views.ParcelView.as_view(), name='parcel_viewer'),
-                  path('ndvi/', views.ndvi_view, name='ndvi_view'),
+    path('ndvi/', views.NDVIView.as_view(), name='ndvi_view'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -2,6 +2,7 @@ import os
 import glob
 from datetime import datetime, timedelta
 
+import pandas as pd
 import rasterio as rio
 import numpy as np
 import plotly.graph_objects as go
@@ -45,40 +46,75 @@ def create_ndvi_cube():
 
         ndvi_by_date[date] = NDVI
 
-    # Créer un NDVI pour chaque jour
-    all_dates = []
-    all_ndvis = []
     current_date = first_date
-    last_ndvi = None
 
-    while current_date <= last_date:
-        if current_date in ndvi_by_date:
-            last_ndvi = ndvi_by_date[current_date]
-
-        if last_ndvi is not None:
-            all_dates.append(current_date)
+    all_ndvis = []
+    rows = []
+    last_ndvi = ndvi_by_date[first_date]
+    sorted_date_number = 0
+    number = 0
+    print('sorted_date',sorted_dates)
+    while sorted_date_number < len(sorted_dates)-1:
+        if sorted_dates[sorted_date_number+1] > current_date:
+            number += 1
+            sorted_date = sorted_dates[sorted_date_number]
+            rows.append({
+                'sorted_date': sorted_date,
+                'layer_date': current_date,
+                'number': number
+            })
+            print('rows',rows)
+            last_ndvi = ndvi_by_date[sorted_date]
             all_ndvis.append(last_ndvi)
+        else:
+            sorted_date_number += 1
+            sorted_date = sorted_dates[sorted_date_number]
+            number = 1
+            rows.append({
+                'sorted_date': sorted_date,
+                'layer_date': current_date,
+                'number': number
+            })
+            last_ndvi = ndvi_by_date[sorted_date]
+            all_ndvis.append(last_ndvi)
+        current_date += timedelta(days=4)
+    number = 0
+    while current_date <= last_date:
+        number +=1
+        sorted_date = sorted_dates[-1]
+        rows.append({
+            'sorted_date': sorted_date,
+            'layer_date': current_date,
+            'number': number
+        })
+        last_ndvi = ndvi_by_date[sorted_date]
+        all_ndvis.append(last_ndvi)
+        current_date += timedelta(days=4)
 
-        current_date += timedelta(days=7)
 
-    # Calculer les jours écoulés depuis la première date
-    days_elapsed = [(date - first_date).days for date in all_dates]
+        # Passer à la semaine suivante
 
+    # Créer le DataFrame final
+    sorted_date_to_current_date = pd.DataFrame(rows)
+    print(sorted_date_to_current_date)
     # Créer le cube NDVI
+    print('cube',len(all_ndvis))
     ndvi_cube = np.stack(all_ndvis, axis=-1)
+    return ndvi_cube, sorted_date_to_current_date
 
-    return ndvi_cube, all_dates, days_elapsed
 
-
-def generate_ndvi_plot(ndvi_cube):
+def generate_ndvi_plot(ndvi_cube, layer, thickness):
     x, y, z = np.indices(ndvi_cube.shape)
-
+    print('x',x)
+    print('y',y)
+    print('z',z)
+    # Création du tracé volumétrique principal
     fig = go.Figure(data=go.Volume(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
         value=ndvi_cube.flatten(),
-        isomin=0.69,
+        isomin=0.16,
         isomax=0.83,
         opacity=0.07,
         surface_count=20,
@@ -93,14 +129,43 @@ def generate_ndvi_plot(ndvi_cube):
         )
     ))
 
+    # Ajout d'un volume d'épaisseur 1 autour de la couche spécifique
+    z_layer = layer  # Indice de la couche à mettre en surbrillance
+    thickness = thickness +1  # Épaisseur du volume
+
+    # Générer les coordonnées pour le volume d'épaisseur 1
+    z_volume = np.arange(z_layer, z_layer + thickness)  # Plage de z pour l'épaisseur
+    x_volume, y_volume, z_volume_mesh = np.meshgrid(
+        np.arange(ndvi_cube.shape[0]),
+        np.arange(ndvi_cube.shape[1]),
+        z_volume,
+        indexing='ij'
+    )
+
+    # Répéter les données NDVI pour chaque tranche dans l'épaisseur
+    layer_data_volume = np.repeat(ndvi_cube[:, :, z_layer][:, :, np.newaxis], thickness, axis=2)
+
+    fig.add_trace(go.Volume(
+        x=x_volume.flatten(),
+        y=y_volume.flatten(),
+        z=z_volume_mesh.flatten(),
+        value=layer_data_volume.flatten(),  # Utiliser les valeurs NDVI répétées
+        colorscale='Magma',  # Appliquer l'échelle de couleurs Magma
+        cmin=0.69,
+        cmax=0.83,
+        opacity=0.2,  # Opacité légèrement plus élevée pour mise en surbrillance
+        showscale=False  # Désactiver la barre d'échelle pour ce volume spécifique
+    ))
+
+    # Mise à jour des axes et des titres
     fig.update_layout(scene=dict(
         xaxis_title='Décamètres Nord-Sud',
         yaxis_title='Décamètres Est-Ouest',
-        zaxis_title='Semaines'
+        zaxis_title='Semaines',
+        aspectmode="cube"  # Maintenir une proportion uniforme des axes
+    ),
+        paper_bgcolor='rgba(0,0,0,0)',  # Fond transparent du graphique
+        plot_bgcolor='rgba(0,0,0,0)'  # Fond transparent du tracé
     )
-)
-
-
-
 
     return pio.to_html(fig, full_html=False)

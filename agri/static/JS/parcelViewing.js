@@ -169,9 +169,23 @@ class ParcelViewer {
                 this.gridData = this.updateGridData(data.pixel_grid)
                 this.initializeImage('grid-container', this.displayWidth, this.image, this.gridData)
                 this.resetBandValues();
-        } catch (error) {
-            console.error('Erreur lors du changement de date:', error);
-        }
+                                // Deuxième requête à /agri/ndvi/
+                const ndviResponse = await fetch(`/agri/ndvi/?date=${date}`, { // Utilisation de backticks
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!ndviResponse.ok) throw new Error(`HTTP error! status: ${ndviResponse.status}`);
+                const ndviData = await ndviResponse.text(); // Supposons que la vue retourne du HTML
+
+                const iframe = document.getElementById('ndvi_view'); // Assurez-vous que l'ID correspond à celui de votre iframe
+                iframe.src = `/agri/ndvi/?date=${date}`; // Mettre à jour l'URL de l'iframe
+                    } catch (error) {
+                        console.error('Erreur lors du changement de date:', error);
+                }
     }
 
     getCsrfToken() {

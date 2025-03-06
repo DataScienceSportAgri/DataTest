@@ -15,6 +15,7 @@ from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 from dash_apps import parcel_dash  # Assurez-vous que cette ligne est présente
 from .services.ndvi_plot import *
+from django.views import View
 
 def home(request):
     context = {
@@ -22,6 +23,14 @@ def home(request):
     }
     return render(request, 'agri/app_presentation.html', context)
 
+def get_available_dates():
+    tiff_dir = os.path.join(settings.STATIC_ROOT, 'satellite_data','Boulinsard', '12bands')
+    dates = []
+    for file in os.listdir(tiff_dir):
+        if file.endswith('12band.TIFF'):
+            date = file.split('_')[0]  # Extrait la date du nom de fichier
+            dates.append(date)
+    return sorted(dates)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ParcelView(TemplateView):
@@ -31,7 +40,7 @@ class ParcelView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Partie commune inchangée
-        context['dates'] = self.get_available_dates()
+        context['dates'] = get_available_dates()
         context['initial_date'] = context['dates'][0]
         parcel_path = "Boulinsard"
         # Traitement des données principales
@@ -61,14 +70,7 @@ class ParcelView(TemplateView):
         context['session_key'] = self.request.session.session_key
         return context
 
-    def get_available_dates(self):
-        tiff_dir = os.path.join(settings.STATIC_ROOT, 'satellite_data','Boulinsard', '12bands')
-        dates = []
-        for file in os.listdir(tiff_dir):
-            if file.endswith('12band.TIFF'):
-                date = file.split('_')[0]  # Extrait la date du nom de fichier
-                dates.append(date)
-        return sorted(dates)
+
 
     @csrf_exempt
     def post(self, request, *args, **kwargs):
@@ -80,6 +82,7 @@ class ParcelView(TemplateView):
                     column_size = request.POST.get('column_size')
                     row_size = request.POST.get('row_size')
                     parcel_path = "Boulinsard"
+
                     # Création et sauvegarde de la nouvelle image
                     processor2 = ParcelImageProcessor(date, int(column_size), int(row_size), parcel_path)
                     rgb_image_path = processor2.save_rgb_image()
@@ -140,13 +143,28 @@ class ParcelView(TemplateView):
 
         return JsonResponse({'error': 'Requête non autorisée'}, status=400)
 
+class NDVIView(View):
+    def get(self, request, *args, **kwargs):
+        # Récupérer la date depuis les paramètres GET ou utiliser une date par défaut
+        specific_date = request.GET.get('date', '2021-03-08')  # Date par défaut pour l'initialisation
 
-def ndvi_view(request):
+        try:
+            converted_date = datetime.strptime(specific_date, '%Y-%m-%d').date()
+        except ValueError:
+            return render(request, 'agri/ndvi_template.html', {'error': 'Date invalide'})
 
-    # Obtenez vos données NDVI (ceci dépend de votre implémentation)
-    ndvi_data, filenames, days_elapsed = create_ndvi_cube()
+        # Obtenir les données NDVI
+        ndvi_data, date_df = create_ndvi_cube()
+        first_layer = date_df.loc[date_df['sorted_date'] == converted_date].index[0]
+        info_last_count = date_df.loc[date_df['sorted_date'] == converted_date].iloc[-1]
+        print('info_first_layer', first_layer)
 
-    # Générez le plot HTML
-    plot_html = generate_ndvi_plot(ndvi_data)
+        print('test')
+        # Extraire les valeurs de current_date et co
+        last_count = info_last_count['number']
+        print('layer ',first_layer, last_count)
+        # Générer le graphique NDVI
+        plot_html = generate_ndvi_plot(ndvi_data, first_layer, last_count)
 
-    return render(request, 'agri/ndvi_template.html', {'plot_html': plot_html})
+        # Retourner le contexte au template
+        return render(request, 'agri/ndvi_template.html', {'plot_html': plot_html})
