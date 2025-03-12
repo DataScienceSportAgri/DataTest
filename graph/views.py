@@ -1,8 +1,9 @@
+from django.core.serializers import serialize
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from scipy.stats import skew, kurtosis
 from django.db.models import Subquery, OuterRef
-from .models import Course, Categorie, CoureurCategorie, Coureur, ResultatCourse, CourseType, CategorieSimplifiee
+from .models import Course, Categorie, CoureurCategorie, Coureur, ResultatCourse, CourseType, CategorieSimplifiee, ColorPreset
 from django.views import generic
 import plotly.graph_objects as go
 from django.views.generic import TemplateView
@@ -269,6 +270,34 @@ class VitesseDistributionView(TemplateView):
 
         return stats
 
+    def transform_to_tuples(self, data):
+        """
+        Transforme différents formats de données de couleur en liste de tuples (série, couleur).
+
+        Formats pris en charge:
+        1. Liste de dictionnaires: [{'code': 'M', 'name': 'Blue'}, {'code': 'F', 'name': 'DeepPink'}]
+        2. Dictionnaire structuré: {'M': {'code': '#808080', 'preset_id': 5}, 'F': {'code': '#FF1493', 'preset_id': 24}}
+
+        Args:
+            data: Données de couleur dans l'un des formats pris en charge
+
+        Returns:
+            Liste de tuples (série, couleur)
+        """
+        # Cas 1: Liste de dictionnaires avec clés 'code' et 'name'
+        if isinstance(data, list) and all(
+                isinstance(item, dict) and 'code' in item and 'name' in item for item in data):
+            return [(item['code'], item['name'].lower()) for item in data]
+
+        # Cas 2: Dictionnaire structuré
+        elif isinstance(data, dict) and all(isinstance(value, dict) and 'code' in value for value in data.values()):
+            return [(key, value['code']) for key, value in data.items()]
+
+        # Format non reconnu
+        else:
+            raise ValueError(
+                "Format de données de couleur non pris en charge. Utilisez soit une liste de dictionnaires avec 'code' et 'name', soit un dictionnaire structuré.")
+
     def get(self, request, *args, **kwargs):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             if request.GET.get('action') == 'submit':
@@ -339,7 +368,10 @@ class VitesseDistributionView(TemplateView):
         # Convertir en liste de dictionnaires
         categories_list = [{'nom': cat['nom'], 'sexe': cat['sexe'] or 'Unknown'} for cat in categories]
         type_list = ['Course sur route', 'Foulee']
-        colors = [('M','blue'),('F','pink')]
+        colors = [
+        {'code': 'M', 'name': 'Blue'},
+        {'code': 'F', 'name': 'DeepPink'}
+    ]
         series_categories = {'F': {'sexe':['F'],'nom':[]},'M':{'sexe':['M'],'nom':[]}}
         # Récupérer le mode depuis les paramètres GET
 
@@ -351,7 +383,11 @@ class VitesseDistributionView(TemplateView):
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
-                    colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                    colors = post_data.get('colors', [
+        {'code': 'M', 'name': 'Blue'},
+        {'code': 'F', 'name': 'DeepPink'}
+    ])
+                    print('colors received', colors)
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
                 except json.JSONDecodeError:
@@ -417,7 +453,10 @@ class VitesseDistributionView(TemplateView):
                     min_distance = int(post_data.get('min_distance', 5000))
                     max_distance = int(post_data.get('max_distance', 10000))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
-                    colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                    colors = post_data.get('colors', [
+        {'code': 'M', 'name': 'Blue'},
+        {'code': 'F', 'name': 'DeepPink'}
+    ])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []},
                                                        "M": {"sexe": ["M"], "nom": []}})
@@ -499,10 +538,10 @@ class VitesseDistributionView(TemplateView):
         self.request.session['vitesses'] = vitesses
         self.request.session['distances'] = distances
         self.request.session['mode'] = mode
-
+        colors_for_generation = self.transform_to_tuples(colors)
         # Générer le graphique
-        context['plot'] = self.generate_plot_dynamic(filtered_dataframes, colors)
-        context['initialData'] = self.generate_plot_data_dynamic(filtered_dataframes, colors)
+        context['plot'] = self.generate_plot_dynamic(filtered_dataframes, colors_for_generation)
+        context['initialData'] = self.generate_plot_data_dynamic(filtered_dataframes, colors_for_generation)
         context['total_count'] = total_count
         context['loaded_count'] = len(initial_results)
         context['min_distance'] = min_distance
@@ -513,6 +552,8 @@ class VitesseDistributionView(TemplateView):
         context['series_categories'] = series_categories
         context['categories'] = json.dumps(categories_list)
         context['mode'] = mode
+        context['colors'] = colors
+        context['colors_presets'] = serialize('json', ColorPreset.objects.all())
 
         return context
 
@@ -541,7 +582,11 @@ class VitesseDistributionView(TemplateView):
                     max_distance = int(post_data.get('maxDistance', 10000))
                     loaded_count = int(post_data.get('loaded_count', 0))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
-                    colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                    colors = post_data.get('colors', [
+        {'code': 'M', 'name': 'Blue'},
+        {'code': 'F', 'name': 'DeepPink'}
+    ])
+                    print('colors received',colors)
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
                 except json.JSONDecodeError:
@@ -624,7 +669,10 @@ class VitesseDistributionView(TemplateView):
                     max_distance = int(post_data.get('maxDistance', 10000))
                     loaded_count = int(post_data.get('loaded_count', 0))
                     type_list = self.safe_literal_eval(post_data.get("course_types", "['Course sur route', 'Foulee']"))
-                    colors = post_data.get('colors', [('M', 'blue'), ('F', 'pink')])
+                    colors = post_data.get('colors', [
+        {'code': 'M', 'name': 'Blue'},
+        {'code': 'F', 'name': 'DeepPink'}
+    ])
                     series_categories = post_data.get('seriesCategories',
                                                       {"F": {"sexe": ["F"], "nom": []}, "M": {"sexe": ["M"], "nom": []}})
                 except json.JSONDecodeError:
@@ -694,7 +742,8 @@ class VitesseDistributionView(TemplateView):
             resultat = ResultatCourse.objects.filter(id__in=updated_loaded_ids)
             print('taille de resultat', len(resultat))
             # Générer les données du graphique
-            plot_data = self.generate_plot_data_dynamic(filtered_dataframes, colors)
+            colors_for_generation = self.transform_to_tuples(colors)
+            plot_data = self.generate_plot_data_dynamic(filtered_dataframes, colors_for_generation)
 
             # Calcul des statistiques
 
@@ -710,7 +759,7 @@ class VitesseDistributionView(TemplateView):
         else:
             return JsonResponse({'status': 'error', 'message': 'Only POST requests are allowed'}, status=405)
 
-    def generate_plot_data(self, resultats, vitesses):
+    def generate_plot_data(self, resultats, vitesses, color_dict):
         data = []
         for i, resultat in enumerate(resultats):
             vitesse = vitesses[i]
@@ -720,34 +769,74 @@ class VitesseDistributionView(TemplateView):
 
         df = pd.DataFrame(data)
         plot_data = []
+        sexes = []
+        for sexe, _ in color_dict:
+            sexes.append(sexe)
+        if sexes == ['M', 'F']:
+            for sexe, color in color_dict:
+                df_sexe = df[df['sexe'] == sexe]
+                plot_data.append({
+                    'type': 'violin',
+                    'x': df_sexe['vitesse'].tolist(),
+                    'name': sexe,
+                    'box': {'visible': True},
+                    'line': {'color': color},
+                    'opacity': 0.6,
+                    'marker': {'color': color}
+                })
+                if sexe == 'F':
+                    color_femme = color
+                else:
+                    color_homme = color
 
-        for sexe, color in [('M', 'blue'), ('F', 'pink')]:
-            df_sexe = df[df['sexe'] == sexe]
-            plot_data.append({
-                'type': 'violin',
-                'x': df_sexe['vitesse'].tolist(),
-                'name': sexe,
-                'box': {'visible': True},
-                'line': {'color': color},
-                'opacity': 0.6,
-                'marker': {'color': color}
-            })
+            moyenne_hommes = df[df['sexe'] == 'M']['vitesse'].mean()
+            moyenne_femmes = df[df['sexe'] == 'F']['vitesse'].mean()
 
-        moyenne_hommes = df[df['sexe'] == 'M']['vitesse'].mean()
-        moyenne_femmes = df[df['sexe'] == 'F']['vitesse'].mean()
+            layout = {
+                'title': "Distribution des vitesses",
+                'xaxis': {'title': "Vitesse (km/h)"},
+                'yaxis': {'title': "Densité"},
+                'uirevision': 'constant',
+                'shapes': [
+                    {'type': 'line', 'x0': moyenne_hommes, 'x1': moyenne_hommes, 'y0': 0, 'y1': 1,
+                     'line': {'color': color_homme, 'width': 2, 'dash': 'dash'}},
+                    {'type': 'line', 'x0': moyenne_femmes, 'x1': moyenne_femmes, 'y0': 0, 'y1': 1,
+                     'line': {'color': color_femme, 'width': 2, 'dash': 'dash'}}
+                ]
+            }
+        else:
+            for sexe, color in color_dict:
+                df_sexe = df[df['sexe'] == sexe]
+                plot_data.append({
+                    'type': 'violin',
+                    'x': df_sexe['vitesse'].tolist(),
+                    'name': sexe,
+                    'box': {'visible': True},
+                    'line': {'color': color},
+                    'opacity': 0.6,
+                    'marker': {'color': color}
+                })
+                if sexe == 'F':
+                    color_femme = color
+                else:
+                    color_homme = color
 
-        layout = {
-            'title': "Distribution des vitesses",
-            'xaxis': {'title': "Vitesse (km/h)"},
-            'yaxis': {'title': "Densité"},
-            'uirevision': 'constant',
-            'shapes': [
-                {'type': 'line', 'x0': moyenne_hommes, 'x1': moyenne_hommes, 'y0': 0, 'y1': 1,
-                 'line': {'color': 'blue', 'width': 2, 'dash': 'dash'}},
-                {'type': 'line', 'x0': moyenne_femmes, 'x1': moyenne_femmes, 'y0': 0, 'y1': 1,
-                 'line': {'color': 'deeppink', 'width': 2, 'dash': 'dash'}}
-            ]
-        }
+            moyenne_hommes = df[df['sexe'] == 'M']['vitesse'].mean()
+            moyenne_femmes = df[df['sexe'] == 'F']['vitesse'].mean()
+
+            layout = {
+                'title': "Distribution des vitesses",
+                'xaxis': {'title': "Vitesse (km/h)"},
+                'yaxis': {'title': "Densité"},
+                'uirevision': 'constant',
+                'shapes': [
+                    {'type': 'line', 'x0': moyenne_hommes, 'x1': moyenne_hommes, 'y0': 0, 'y1': 1,
+                     'line': {'color': color_homme, 'width': 2, 'dash': 'dash'}},
+                    {'type': 'line', 'x0': moyenne_femmes, 'x1': moyenne_femmes, 'y0': 0, 'y1': 1,
+                     'line': {'color': color_femme, 'width': 2, 'dash': 'dash'}}
+                ]
+            }
+
 
         return {'data': plot_data, 'layout': layout}
 
@@ -764,7 +853,7 @@ class VitesseDistributionView(TemplateView):
         df = pd.DataFrame(data)
         fig = go.Figure()
 
-        for sexe, color in [('M', 'blue'), ('F', 'pink')]:
+        for sexe, color in [('M', 'blue'), ('F', 'deeppink')]:
             df_sexe = df[df['sexe'] == sexe]
             fig.add_trace(go.Violin(x=df_sexe['vitesse'], name=sexe,
                                     box_visible=True, line_color=color,

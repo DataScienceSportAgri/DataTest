@@ -62,7 +62,8 @@ window.isRefreshing = true;
     minDistance: chartConfig.minDistance,
     maxDistance: chartConfig.maxDistance,
     course_types: chartConfig.typeList,
-    loaded_count: chartConfig.loadedCount
+    loaded_count: chartConfig.loadedCount,
+      colors:     chartConfig.colors
   };
 
   // Convertir l'objet en chaîne JSON

@@ -15,6 +15,7 @@
             {{ series_categories|json_script:"series_categories" }}
     {{ is_update|default:False|json_script:"is_update" }}
     {{ mode|default:'classique'|json_script:"mode" }}
+    {{ colors|json_script:"colors" }}
 <div style="display: none;">
     <span id="refresh_interval">{{ refresh_interval|default:"25000" }}</span>
     <span id="total_count">{{ total_count|default:"0" }}</span>
@@ -22,15 +23,17 @@
     <span id="min_distance">{{ min_distance|default:"5000" }}</span>
     <span id="max_distance">{{ max_distance|default:"10000"}}</span>
     <span id="type_list">{{ type_list|default:"['Course sur route', 'Foulee']"|safe}}</span>
-        <span id="categories">{{ type_list|default:"['F', 'M']"|safe}}</span>
-            <span id="series_categories">{{ type_list|safe}}</span>
+        <span id="categories">{{ categories|default:"['F', 'M']"|safe}}</span>
+            <span id="series_categories">{{ series_categories|safe}}</span>
     <span id="stats">{{ stats|default:"[]"|safe}}</span>
     <span id="mode">{{ mode|default:"classique"}}</span>
+<span id="colors_presets">{{ colors_presets }}</span>
 </div>
 <script>
 window.isRefreshing = false;
 </script>
 <script src="{% static 'js/chartConfig.js' %}"></script>
+
     <button id="categorieSimplifieeButton">
         <!-- Texte initial basé sur le mode -->
         Passer en mode Catégories Simplifiées
@@ -207,7 +210,8 @@ document.getElementById('submit-filter').addEventListener('click', function() {
         course_types: type_list,
         action: 'submit',
         seriesCategories: selectcategories || {},
-        mode: window.chartConfig.mode
+        mode: window.chartConfig.mode,
+        colors: window.chartConfig.colors
     };
 
     console.log('Données à envoyer:', postData);

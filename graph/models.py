@@ -133,3 +133,16 @@ class SyllablePair(models.Model):
         if self.french_syllable2:
             return f"{self.french_syllable1}-{self.french_syllable2} -> {self.marsian_syllable1}-{self.marsian_syllable2}"
         return f"{self.french_syllable1} -> {self.marsian_syllable1}"
+
+class ColorPreset(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    color_code = models.CharField(max_length=7, unique=True)  # Format hexadécimal
+
+    class Meta:
+        verbose_name = "Préréglage de couleur"
+        verbose_name_plural = "Préréglages de couleurs"
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.color_code})"
+
