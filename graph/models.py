@@ -67,6 +67,7 @@ class ResultatCourse(models.Model):
     temps2 = models.DurationField(null=True, blank=True)
     position = models.IntegerField()
     categorie = models.ForeignKey(Categorie, on_delete=models.CASCADE, null=True, blank=True)
+    score_de_performance = models.FloatField(null=True, blank=True)
 
     class Meta:
         unique_together = ('coureur', 'course')
@@ -146,3 +147,49 @@ class ColorPreset(models.Model):
     def __str__(self):
         return f"{self.name} ({self.color_code})"
 
+
+class NormalisateurDistancesCategories(models.Model):
+    DISTANCE_CHOICES = [
+        ('0-7500', '0 à 7500 m'),
+        ('7500-15000', '7500 à 15000 m'),
+        ('15000-30000', '15000 à 30000 m'),
+        ('30000-45000', '30000 à 45000 m'),
+        ('45000+', 'Plus de 45000 m')
+    ]
+
+    distance_range = models.CharField(max_length=20, choices=DISTANCE_CHOICES)
+    categorie = models.ForeignKey(CategorieSimplifiee, on_delete=models.PROTECT)
+    vitesse_moyenne = models.FloatField(null=True, blank=True)
+    multiplicateur = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('distance_range', 'categorie')
+
+
+class NormalisateurTypeDeCourseNbParticipants(models.Model):
+    course_type = models.ForeignKey(
+        CourseType,
+        on_delete=models.PROTECT,  # Empêche la suppression si utilisé
+        related_name='normalisateurs',
+        verbose_name="Type de course"
+    )
+    seuil_participants = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Seuil participant"
+    )
+    multiplicateur = models.FloatField(
+        verbose_name="Coefficient multiplicateur",
+        default=1.0
+    )
+
+    class Meta:
+        unique_together = ('course_type', 'seuil_participants')
+        verbose_name = "Normalisateur type de course"
+        verbose_name_plural = "Normalisateurs types de course"
+
+    def __str__(self):
+        base = f"{self.course_type.nom} - "
+        if self.seuil_participants:
+            return base + f"Seuil {self.seuil_participants} (×{self.multiplicateur})"
+        return base + f"Générique (×{self.multiplicateur})"

@@ -1,6 +1,5 @@
-from django.urls import path, include
+from django.urls import path
 from . import views
-import dash_apps.parcel_dash # Import explicite nécessaire pour
 from django.conf import settings
 from django.conf.urls.static import static
 # Configuration Dash

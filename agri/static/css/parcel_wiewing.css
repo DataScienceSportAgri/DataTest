@@ -64,3 +64,27 @@ section {
 #band-values-table td {
     text-align: center;
 }
+
+#center-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px; /* Ajustez la largeur selon vos besoins */
+    height: auto;
+    margin: 0 auto;
+    background-color: transparent; /* Pas de couleur de fond */
+}
+
+#access-dashapps {
+    padding: 10px 15px;
+    font-size: 14px;
+    color: white;
+    background-color: #007bff; /* Couleur bleue */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#access-dashapps:hover {
+    background-color: #0056b3; /* Couleur plus foncée au survol */
+}

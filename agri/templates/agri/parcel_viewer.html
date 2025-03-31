@@ -130,6 +130,12 @@
         </div>
     </div>
     </div>
+    <!-- Nouvelle division pour le bouton -->
+<div id="center-button">
+    <button onclick="window.location.href='{% url 'dashapp:parcelle_analysis' %}'">
+        Accéder au Machine Learning de prédiction de Rendement
+    </button>
+</div>
 <div id="col2">
     <h2>NDVI 3d Plot</h2>
     <iframe id='ndvi_view' src="{% url 'ndvi_view' %}" width="100%" height="1250px" frameborder="0"></iframe>

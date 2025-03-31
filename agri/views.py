@@ -1,19 +1,14 @@
-import numpy as np
-from django.core.cache import cache
 from venv import logger
-from django.http import JsonResponse, HttpResponseServerError
+from django.http import HttpResponseServerError
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from pydantic import ValidationError
 from .services.image_processor import ParcelImageProcessor
-import os
 from django.conf import settings
 from .schemas import GridCellSchema
 from django.views.generic import TemplateView
-from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
-from dash_apps import parcel_dash  # Assurez-vous que cette ligne est présente
 from .services.ndvi_plot import *
 from django.views import View
 

@@ -120,14 +120,16 @@ def generate_ndvi_plot(ndvi_cube, layer, thickness):
         surface_count=20,
         colorscale='Viridis',
         colorbar=dict(
-            title="Intensité du NDVI",
-            titleside="right",
-            titlefont=dict(
-                size=14,
-                family="Arial"
+            title=dict(
+                text="Intensité du NDVI",
+                side="right",  # Position du titre
+                font=dict(
+                    size=14,
+                    family="Arial"
+                )
             )
-        )
-    ))
+        ))
+    )
 
     # Ajout d'un volume d'épaisseur 1 autour de la couche spécifique
     z_layer = layer  # Indice de la couche à mettre en surbrillance

@@ -2,7 +2,9 @@
 from django.db import models
 import os
 from django.conf import settings
-
+import uuid
+from django.utils import timezone
+from hashlib import sha256
 
 class SatelliteImage:
     def __init__(self, date):
@@ -35,3 +37,5 @@ class Parcel(models.Model):
     def get_image_for_date(self, date):
         """Retourne un objet SatelliteImage pour une date donnée"""
         return SatelliteImage(date)
+
+

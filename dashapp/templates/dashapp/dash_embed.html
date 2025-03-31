@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{%  load static %}
+{% load plotly_dash %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/affichage_app.css' %}">
+<div id="dash-wrapper" style="width:100%; height:100vh;">
+    <div id="dash-content" style="width:100%; height:100%;">
+        {% plotly_app name="ParcelleAnalysis" ratio=1 initial_arguments='{"csrf_token": "{{ csrf_token }}"}' %}
+    </div>
+</div>
+
+{% endblock %}

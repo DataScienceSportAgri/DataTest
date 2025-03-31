@@ -13,26 +13,32 @@ import sys
 from pathlib import Path
 import os
 from pathlib import Path
-
+import site
 BASE_DIR = Path(__file__).resolve().parent.parent  # Définition standard
-print(type(BASE_DIR))  # Doit afficher <class 'pathlib.WindowsPath'> ou
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000']
 VENV_PATH = sys.prefix  # Chemin de l'environnement virtuel
+
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'node_modules'),
     #os.path.join(BASE_DIR, 'graph','static'),
     #os.path.join(BASE_DIR, 'bubble_sort','static'),
-    os.path.join(BASE_DIR, 'dash_apps/static'),  # Static files for iframe-based Dash app
     os.path.join(BASE_DIR, 'static'),
-    os.path.join(VENV_PATH, 'Lib/site-packages/django_plotly_dash/static'),
-
+    os.path.join(BASE_DIR , r'.venv/Lib/site-packages/dash_renderer'),
+    os.path.join(BASE_DIR, r'.venv/Lib/site-packages/plotly'),  # Fichiers Plotly
 ]
 COMPRESS_ENABLED = False
 PLOTLY_DASH = {
     'cache_timeout': 3600,
     'storage_type': 'session',
     'http_poke_interval': 30
+}
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',  # Pour usage local uniquement
+    }
 }
 # Ajout des configurations CORS
 CORS_ALLOW_ALL_ORIGINS = True
@@ -43,7 +49,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'django_plotly_dash.finders.DashAssetFinder'  # Uniquement ce finder
 ]
+
 NPM_FILE_PATTERNS = {
     'plotly.js-dist': ['plotly.js']
 }
@@ -66,6 +74,7 @@ JSON_SERIALIZER = {
 # Application definition
 
 INSTALLED_APPS = [
+    'dashapp.apps.DashappConfig',
     'graph.apps.GraphConfig',
     'polls.apps.PollsConfig',
     'django.contrib.admin',
@@ -77,6 +86,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bubble_sort.apps.BubbleSortConfig',
     'agri.apps.AgriConfig',
+    'django_plotly_dash'
 ]
 # Add this line below STATIC_URL
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -84,18 +94,21 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_plotly_dash.middleware.BaseMiddleware',  # Doit être après SessionMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
+
+
 ROOT_URLCONF = 'DataTest.urls'
 
 PLOTLY_COMPONENTS = [
-    'dpd_static_support',
     'dash_core_components',
     'dash_html_components',
     'dash_renderer',
+    'dash_bootstrap_components'
 ]
 TEMPLATES = [
     {
@@ -172,9 +185,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DJANGO_COMMANDER_COMMAND_FOLDERS = [
-    os.path.abspath(os.path.join('DataTest\graph\management', "commands")),
+    os.path.abspath(os.path.join('DataTest\\graph\\management', "commands")),
 ]
 
 LOGIN_URL = '/login/'  # Ajustez le chemin selon votre configuration
 
 LOGIN_REDIRECT_URL = '/'  # Redirige vers la page d'accueil après la connexion
+
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
