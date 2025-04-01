@@ -10,8 +10,9 @@ class ParcelViewer {
         console.log('Grid mouse movement:', event.clientX, event.clientY);
     };
        this.container = document.getElementById(containerId);
-       this.displayWidth = 800;
+       this.displayWidth = 400;
        this.gridData = this.parseGridData();
+       this.datePicker = document.getElementById('date-picker');
        this.datePicker = document.getElementById('date-picker');
        this.currentDate = this.datePicker.value
        this.gridOverlay = null
@@ -301,7 +302,7 @@ class ParcelViewer {
 
 
 class GridOverlay {
-    constructor(containerId = 'grid-container', displayWidth = 800, imageElement, gridData = null) {
+    constructor(containerId = 'grid-container', displayWidth = 400, imageElement, gridData = null) {
         this.image = imageElement; // Nouveau paramètre
         console.log(`Initializing GridOverlay for container: ${containerId}`);
         this.container = document.getElementById(containerId);

@@ -536,9 +536,10 @@ app.layout = html.Div([
             html.Div([
                 html.Button("Ajouter points d'entraînement", id='add-train-points-btn'),
                 html.Button("Voir points d'entraînement", id='view-train-points-btn'),
+                html.Div("Points séléctionnés pour l'entrainement", id='selections-display'),
                 html.Button("Ajouter points de prédiction", id='add-pred-points-btn'),
                 html.Button("Voir points de prédiction", id='view-pred-points-btn'),
-            ], id='points-mode-config'),
+            ], id='points-mode-div', style={'display':'block'}),
 
             # Div pour le mode "filter"
             html.Div([
@@ -555,68 +556,61 @@ app.layout = html.Div([
                     value=[default_parcelle]
                 )
             ], style={'margin-bottom': '10px'}),
-
             html.Div([
-                # Filtrage du Rendement
                 html.Div([
-                    html.Label("Filtrer les extrêmes du Rendement:"),
-                    html.Div([
-                        # Slider pour exclure les valeurs minimales (0-25%)
-                        html.Label("Exclure les plus faibles:", style={'display': 'block'}),
-                        dcc.Slider(
-                            id='rendement-min-slider',
-                            min=0,
-                            max=25,
-                            step=1,
-                            marks={0: '0%', 5: '5%', 10: '10%', 15: '15%', 20: '20%', 25: '25%'},
-                            value=0,
-                            tooltip={'placement': 'bottom', 'always_visible': True}
-                        ),
+                    # Slider pour exclure les valeurs minimales (0-25%)
+                    html.Label("Exclure les plus faibles:", style={'display': 'block'}),
+                    dcc.Slider(
+                        id='rendement-min-slider',
+                        min=0,
+                        max=25,
+                        step=1,
+                        marks={i: f'{i}%' for i in range(0, 26, 5)},
+                        value=0,
+                        tooltip={'placement': 'bottom', 'always_visible': False}
+                        # Désactiver always_visible si nécessaire
+                    ),
 
-                        # Slider pour exclure les valeurs maximales (75-100%)
-                        html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
-                        dcc.Slider(
-                            id='rendement-max-slider',
-                            min=75,
-                            max=100,
-                            step=1,
-                            marks={75: '75%', 80: '80%', 85: '85%', 90: '90%', 95: '95%', 100: '100%'},
-                            value=100,
-                            tooltip={'placement': 'bottom', 'always_visible': True}
-                        )
-                    ])
+                    # Slider pour exclure les valeurs maximales (75-100%)
+                    html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
+                    dcc.Slider(
+                        id='rendement-max-slider',
+                        min=75,
+                        max=100,
+                        step=1,
+                        marks={i: f'{i}%' for i in range(75, 101, 5)},
+                        value=100,
+                        tooltip={'placement': 'bottom', 'always_visible': False}
+                        # Désactiver always_visible si nécessaire
+                    )
                 ], style={'width': '45%', 'display': 'inline-block', 'vertical-align': 'top'}),
 
-                # Filtrage de l'indice
                 html.Div([
-                    html.Label(f"Filtrer les extrêmes de l'indice {indices[0]}:"),
-                    html.Div([
-                        # Slider pour exclure les valeurs minimales (0-25%)
-                        html.Label("Exclure les plus faibles:", style={'display': 'block'}),
-                        dcc.Slider(
-                            id='indice-min-slider',
-                            min=0,
-                            max=25,
-                            step=1,
-                            marks={0: '0%', 5: '5%', 10: '10%', 15: '15%', 20: '20%', 25: '25%'},
-                            value=0,
-                            tooltip={'placement': 'bottom', 'always_visible': True}
-                        ),
+                    # Slider pour exclure les valeurs minimales (0-25%)
+                    html.Label("Exclure les plus faibles:", style={'display': 'block'}),
+                    dcc.Slider(
+                        id='indice-min-slider',
+                        min=0,
+                        max=25,
+                        step=1,
+                        marks={i: f'{i}%' for i in range(0, 26, 5)},
+                        value=0,
+                        tooltip={'placement': 'bottom', 'always_visible': False}  # Désactiver always_visible si nécessaire
+                    ),
 
-                        # Slider pour exclure les valeurs maximales (75-100%)
-                        html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
-                        dcc.Slider(
-                            id='indice-max-slider',
-                            min=75,
-                            max=100,
-                            step=1,
-                            marks={75: '75%', 80: '80%', 85: '85%', 90: '90%', 95: '95%', 100: '100%'},
-                            value=100,
-                            tooltip={'placement': 'bottom', 'always_visible': True}
-                        )
-                    ])
-                ], style={'width': '45%', 'display': 'inline-block', 'margin-left': '10%', 'vertical-align': 'top'}),
-
+                    # Slider pour exclure les valeurs maximales (75-100%)
+                    html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
+                    dcc.Slider(
+                        id='indice-max-slider',
+                        min=75,
+                        max=100,
+                        step=1,
+                        marks={i: f'{i}%' for i in range(75, 101, 5)},
+                        value=100,
+                        tooltip={'placement': 'bottom', 'always_visible': False}  # Désactiver always_visible si nécessaire
+                    )
+                ], style={'width': '45%', 'display': 'inline-block', 'vertical-align': 'top'}),
+            ],id='filter-mode-div', style = {'display' : 'none'}),
                 # Affichage des valeurs actuelles
                 html.Div(id='extremes-output', style={'margin-top': '20px'})
             ], style={'padding': '15px', 'border': '1px solid #eee'}),
@@ -635,23 +629,22 @@ app.layout = html.Div([
                         )
                     ], style={'margin-bottom': '10px'}),
                 ]),
-            ]),
-
-            html.Div([
-                # Dropdown des indices
-                html.Div([
-                    html.Label("Sélectionner les indices utilisées pour l'entrainement :"),
-                    dcc.Dropdown(
-                        id='indices-dropdown',
-                        options=[{'label': idx, 'value': idx} for idx in indices],
-                        multi=True,
-                        value=['NDVI'],  # NDVI par défaut
-                        placeholder="Choisissez un ou plusieurs indices"
-                    )
-                ], style={'margin-bottom': '10px'}),
 
                 html.Div([
-                            html.H4("Configuration des prédictions"),
+                    # Dropdown des indices
+                    html.Div([
+                        html.Label("Sélectionner les indices utilisées pour l'entrainement :"),
+                        dcc.Dropdown(
+                            id='indices-dropdown',
+                            options=[{'label': idx, 'value': idx} for idx in indices],
+                            multi=True,
+                            value=['NDVI'],  # NDVI par défaut
+                            placeholder="Choisissez un ou plusieurs indices"
+                        )
+                    ], style={'margin-bottom': '10px'}),
+
+                html.Div([
+                            html.H4("Configuration des dates utilisées"),
 
                             html.Div([
                                 html.Label("Dates utilisées pour l'entrainement Boulinsard:"),
@@ -673,19 +666,23 @@ app.layout = html.Div([
                                 )
                             ], style={'margin-bottom': '10px'})
                         ])
-                        ], id='filter-mode-config', style={'display': 'none'})
+                        ], id='filter-mode-config')
                     ], style={'padding': '15px', 'border': '1px solid #eee'}),
+        ]),
                 html.Div([
                     html.Button("Lancer l'Entraînement", id='train-model-btn', n_clicks=0,
                                 style={'background-color': '#4CAF50', 'margin-right': '10px'}),
                     html.Button("Exécuter les Prédictions", id='predict-btn', n_clicks=0, style={'background-color': '#008CBA'})
                 ], style={'padding': '20px', 'border-top': '1px solid #ddd'}),
+
+            html.Div([
+
+                html.Div(id='training-result-output')
             ]),
-        ]),
         html.Div([
             dcc.Graph(id='map-graph', figure=base_fig, style={'height': '80vh'}),
             html.Div(id='model-results', style={'margin-top': '20px'}),
-
+            dcc.Store(id='csrf_token'),
             dcc.Store(id='session-id-store', data=str(uuid.uuid4()), storage_type='session'),
             dcc.Store(id='csrf-token-store', data=''),
             dcc.Store(id='model-results-store'),
@@ -700,18 +697,42 @@ app.layout = html.Div([
             dcc.Store(id='map-view-state', storage_type='session',
                       data={"zoom": 12, "center": {"lat": (lat_min + lat_max) / 2, "lon": (lon_min + lon_max) / 2}}),
             dcc.Checklist(id='show-predictions', style={'display': 'none'})
-        ], style={'padding': '20px'}),
-
-
+        ], style={'padding': '20px'})
+    ])
 ])
+
+# Callback pour mettre à jour l'affichage des Divs
 @app.callback(
-    Output('csrf-token-store', 'data'),
-    Input('_dash-initial-callback', 'children')
+    [Output('points-mode-div', 'style'),
+     Output('filter-mode-div', 'style')],
+    [Input('prediction-mode', 'value')]
 )
-def set_csrf_token(_):
-    ctx = dash.callback_context
-    args = ctx.inputs_list[0]['id'].get('initial_arguments', {})
-    return args.get('csrf_token', '')
+def update_div_visibility(prediction_mode):
+    if prediction_mode == 'points':
+        # Afficher le Div "points" et cacher le Div "filter"
+        return {'display': 'block'}, {'display': 'none'}
+    elif prediction_mode == 'filter':
+        # Afficher le Div "filter" et cacher le Div "points"
+        return {'display': 'none'}, {'display': 'block'}
+    else:
+        # Par défaut, cacher les deux Divs (optionnel)
+        return {'display': 'none'}, {'display': 'none'}
+
+app.clientside_callback(
+    """
+    function(n) {
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+        return getCookie('csrftoken');
+    }
+    """,
+    Output('csrf-token-store', 'data'),
+     Input('csrf_token', 'data') # Utilisez un composant qui existe dans votre layout
+)
 
 
 
@@ -767,132 +788,74 @@ def update_date_and_index_options(selected_parcelle, selected_country):
     return options_date, dates[0], options_index, indices[0]  # Retourner le premier indice comme valeur par défaut  # Retourner la première date comme valeur par défaut
 
 
-# Callback 1: Préparation des données d'entraînement
-@app.callback(
-    Output('training-data-store', 'data'),
-    Input('train-model-btn', 'n_clicks'),
+app.clientside_callback(
+    """
+    function(n_clicks, mode, dates_boulinsard, dates_normales, indices, points_store, 
+             rendement_min, rendement_max, indice_min, indice_max, csrf_token) {
+        if (!n_clicks) {
+            return window.dash_clientside.no_update;
+        }
+
+        // Construction du payload
+        const payload = {
+            training: {
+                mode: mode,
+                dates: {
+                    boulinsard: dates_boulinsard,
+                    normales: dates_normales
+                },
+                indices: indices,
+                filters: {}
+            },
+            country_code: "FR"
+        };
+
+        // Données spécifiques au mode
+        if (mode === 'points') {
+            payload.training.parcelles = points_store;
+        } else {
+            payload.training.filters = {
+                rendement_min: rendement_min,
+                rendement_max: rendement_max,
+                indice_min: indice_min,
+                indice_max: indice_max
+            };
+        }
+
+        // Envoi de la requête
+        return fetch('parcelles/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf_token
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            return JSON.stringify(data);
+        })
+        .catch(error => {
+            return `Erreur: ${error.message}`;
+        });
+    }
+    """,
+    Output('training-result-output', 'children'),  # Ajoutez un Div pour afficher les résultats
+    [Input('train-model-btn', 'n_clicks')],
     [State('prediction-mode', 'value'),
-     State('parcelles-selection', 'value'),
+     State('pred-dates-selection', 'value'),
+     State('dates-selected-fo-training', 'value'),
+     State('indices-dropdown', 'value'),
+     State('training-points-store', 'data'),
      State('rendement-min-slider', 'value'),
      State('rendement-max-slider', 'value'),
      State('indice-min-slider', 'value'),
      State('indice-max-slider', 'value'),
-     State('indices-dropdown', 'value'),
-     State('session-id-store', 'data')],
-    prevent_initial_call=True
+     State('csrf-token-store', 'data')]
 )
-def prepare_training_data(n_clicks, mode, parcelles, r_min, r_max, i_min, i_max, indices, session_id):
-    if not n_clicks:
-        return dash.no_update
-
-    # Mode de sélection manuelle par points
-    if mode == 'points':
-        return {
-            'country_code': 'FR',
-            'mode': 'points',
-            'session_id': session_id,
-            'indices': indices if isinstance(indices, list) else [indices]
-        }
-
-    # Mode de filtrage automatique
-    elif mode == 'filter' and parcelles:
-        return {
-            'country_code': 'FR',
-            'mode': 'filter',
-            'training': {
-                'parcelles': parcelles,
-                'filters': {
-                    'indice': indices[0] if isinstance(indices, list) and indices else 'NDVI',
-                    'percentiles': {
-                        'rendement_min': r_min,
-                        'rendement_max': r_max,
-                        'indice_min': i_min,
-                        'indice_max': i_max
-                    }
-                },
-                'indices': indices if isinstance(indices, list) else [indices]
-            }
-        }
-
-    return dash.no_update
-
-
-# Callback 2: Appel API et stockage des résultats
-@app.callback(
-    Output('model-results-store', 'data'),
-    Input('training-data-store', 'data'),
-    State('csrf-token-store', 'data'),
-    prevent_initial_call=True
-)
-def call_ml_api(training_data, csrf_token):
-    if not training_data:
-        return dash.no_update
-
-    # Appel à l'API Django avec le chemin correct
-    try:
-        response = requests.post(
-            '/api/ml-pipeline/',
-            json=training_data,
-            headers={
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrf_token
-            }
-        )
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {'error': f"Erreur {response.status_code}: {response.text}"}
-
-    except Exception as e:
-        return {'error': str(e)}
-
-@app.callback(
-    Output('model-results', 'children'),
-    Input('model-results-store', 'data'),
-    State('prediction-mode', 'value'),
-    prevent_initial_call=True
-)
-def display_results(results, mode):
-    if not results:
-        return dash.no_update
-
-    if 'error' in results:
-        return html.Div([
-            html.Div(f"Erreur: {results['error']}",
-                     className='alert alert-danger')
-        ])
-
-    # Affichage des résultats d'entraînement
-    training_results = results.get('training', {})
-
-    # Titre différent selon le mode
-    mode_title = "Points sélectionnés manuellement" if mode == 'points' else "Filtrage automatique"
-
-    return html.Div([
-        html.H4(f"Résultats du modèle ({mode_title})", className='mt-4'),
-
-        # Métriques du modèle
-        html.Div([
-            html.P(f"R²: {training_results.get('r2', 0):.3f}", className='mb-2'),
-            html.P(f"RMSE: {training_results.get('rmse', 0):.2f}", className='mb-2'),
-            html.P(f"Nombre de points utilisés: {training_results.get('n_points', 0)}")
-        ], className='alert alert-success'),
-
-        # Graphique 3D si disponible
-        dcc.Graph(
-            figure=json.loads(training_results.get('3d_plot', '{}')),
-            style={'display': '3d_plot' in training_results and 'block' or 'none'}
-        ),
-
-        # Résultats de prédiction si disponibles
-        html.Div([
-            html.H5("Prédictions", className='mt-3'),
-            html.P(f"Rendement moyen: {results.get('prediction', {}).get('stats', {}).get('mean', 0):.2f} t/ha"),
-            html.P(f"Écart-type: {results.get('prediction', {}).get('stats', {}).get('std', 0):.2f}")
-        ], style={'display': 'prediction' in results and 'block' or 'none'})
-    ])
-
 
 @app.callback(
     Output('map-view-state', 'data'),
