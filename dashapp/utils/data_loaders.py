@@ -2,6 +2,7 @@ from django.core.cache import cache
 from django.conf import settings
 from pathlib import Path
 import pandas as pd
+import os
 
 BASE_PATH = Path(settings.BASE_DIR) / 'saved_parcelle_for_dash'
 

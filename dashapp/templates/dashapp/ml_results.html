@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Résultats de l'entraînement</h2>
+    
+    <div class="metrics">
+        <p>R² Score: {{ r2|floatformat:2 }}</p>
+        <p>RMSE: {{ rmse|floatformat:2 }}</p>
+    </div>
+
+    <h3>Importance des caractéristiques</h3>
+    <ul>
+        {% for feature, importance in features.items %}
+        <li>{{ feature }}: {{ importance|floatformat:4 }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if plot_data %}
+    <div id="plot-container"></div>
+    <script>
+        const plotData = {{ plot_data|safe }};
+        Plotly.newPlot('plot-container', plotData.data, plotData.layout);
+    </script>
+    {% endif %}
+</div>
+{% endblock %}

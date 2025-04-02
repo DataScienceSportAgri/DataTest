@@ -1,3 +1,5 @@
+from logging import warn
+
 import numpy as np
 from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import cross_val_score
@@ -5,87 +7,218 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import plotly.graph_objs as go
-
+from django.core.exceptions import ObjectDoesNotExist
 import os
 import pandas as pd
 from glob import glob
+from .models import SelectedPoint
+from DataTest import settings
 
-
-def load_filtered_data(country_code, parcelles, dates, rendement_min, rendement_max, indice_name, indice_min,
-                       indice_max):
+def load_points_data(session_id, noms_dates, noms_dates_boulinsard, indices, points_client):
     """
-    Charge et filtre les données depuis la structure de fichiers organisée.
+    Charge les données des points sauvegardés dans la session et sur le client,
+    construit un DataFrame unifié avec tri temporel et sélection d'indices.
 
     Args:
-        country_code (str): Code pays (ex: 'FR')
-        parcelles (list): Liste des numéros de parcelles
-        dates (list): Liste des dates au format 'YYYY-MM-DD'
-        rendement_min (float): Rendement minimum à filtrer
-        rendement_max (float): Rendement maximum à filtrer
-        indice_name (str): Nom de l'indice végétation à filtrer
-        indice_min (float): Valeur minimale de l'indice
-        indice_max (float): Valeur maximale de l'indice
+        session_id (str): Identifiant de session pour récupérer les points sauvegardés.
+        noms_dates (list): Liste des noms de dates normales à utiliser pour le tri.
+        noms_dates_boulinsard (list): Liste des noms de dates Boulinsard à utiliser pour le tri.
+        indices (list): Liste des indices à conserver dans le DataFrame.
+        points_client (list): Liste des points encore présents sur le client.
 
     Returns:
-        pd.DataFrame: DataFrame combiné et filtré
+        pd.DataFrame: DataFrame combiné et filtré.
     """
 
+    try:
+        # Récupération de tous les points de la session
+        points_session = SelectedPoint.objects.filter(session_id=session_id)
+    except ObjectDoesNotExist:
+        return pd.DataFrame()
+
+    if not points_session.exists():
+        return pd.DataFrame()
+
+        # Fusionner les points du client avec ceux de la session
+    all_points = []
+    for point in points_session:
+        if any(
+                p['latitude'] == point.latitude and p['longitude'] == point.longitude and p[
+                    'parcelle'] == point.parcelle
+                for p in points_client
+        ):
+            all_points.append(point)
+
+    if not all_points:
+        return pd.DataFrame()
+
+    grouped_data = {}
     base_path = "saved_parcelle_for_dash"
+
+    # Regroupement des points par parcelle pour optimisation I/O
+    for point in all_points:
+        key = (point.country_code, point.parcelle)
+        if key not in grouped_data:
+            grouped_data[key] = []
+        grouped_data[key].append(point)
+
     all_dfs = []
 
-    for parcelle in parcelles:
-        # Construction du chemin
-        parcelle_path = os.path.join(base_path, country_code, str(parcelle), "utils", "filtered_dataframe.pkl")
+    # Traitement par groupe de parcelle
+    for (country, parcelle), points_group in grouped_data.items():
+        parcelle_path = os.path.join(base_path, country, parcelle, "utils", "filtered_dataframe.pkl")
 
-        # Vérification de l'existence du fichier
         if not os.path.exists(parcelle_path):
-            print(f"Fichier introuvable pour {parcelle} : {parcelle_path}")
+            print(f"Fichier introuvable: {parcelle_path}")
             continue
 
         try:
-            # Chargement du DataFrame
+            # Chargement du dataframe complet de la parcelle
             df = pd.read_pickle(parcelle_path)
 
-            # Vérification du format des données
-            if not isinstance(df, pd.DataFrame) or df.empty:
-                print(f"Format invalide pour {parcelle}")
+            # Extraction des indexes spécifiques
+            valid_indexes = [p.dataframe_index for p in points_group
+                             if isinstance(p.dataframe_index, int)
+                             and p.dataframe_index < len(df)]
+
+            if not valid_indexes:
                 continue
 
-            # Filtrage des dates (suppose un MultiIndex avec 'date')
+            # Filtrage des lignes correspondant aux indexes valides
+            df_filtered = df.iloc[valid_indexes].copy()
+
+            # Filtrage par noms de dates
             if 'date' in df.index.names:
-                df = df[df.index.get_level_values('date').isin(dates)]
+                if noms_dates_boulinsard and 'boulinsard' in df.columns:
+                    df_filtered = df_filtered[df_filtered['boulinsard'].isin(noms_dates_boulinsard)]
+                elif noms_dates and 'date' in df.columns:
+                    df_filtered = df_filtered[df_filtered['date'].isin(noms_dates)]
 
-            # Filtrage des valeurs
-            filtered = df[
-                (df['Rendement'].between(rendement_min, rendement_max)) &
-                (df[indice_name].between(indice_min, indice_max))
-                ]
+            # Sélection des colonnes spécifiées par les indices
+            columns_to_keep = ['date'] + indices + ['Rendement']
+            df_filtered = df_filtered[columns_to_keep]
 
-            # Ajout des métadonnées
-            filtered['Parcelle'] = parcelle
-            filtered['Country'] = country_code
+            # Ajout des métadonnées géographiques
+            df_filtered['Parcelle'] = parcelle
+            df_filtered['Country'] = country
 
-            all_dfs.append(filtered)
+            # Ajout des coordonnées depuis les points
+            coord_mapping = {p.dataframe_index: (p.latitude, p.longitude)
+                             for p in points_group if p.dataframe_index in valid_indexes}
+            df_filtered['Latitude'] = df_filtered.index.map(lambda x: coord_mapping.get(x, (None, None))[0])
+            df_filtered['Longitude'] = df_filtered.index.map(lambda x: coord_mapping.get(x, (None, None))[1])
+
+            all_dfs.append(df_filtered)
 
         except Exception as e:
-            print(f"Erreur lors du chargement de {parcelle} : {str(e)}")
+            print(f"Erreur sur la parcelle {parcelle} : {str(e)}")
             continue
 
-    # Combinaison des DataFrames
-    final_df = pd.concat(all_dfs) if all_dfs else pd.DataFrame()
+    if not all_dfs:
+        return pd.DataFrame()
 
-    # Nettoyage final
-    if not final_df.empty:
-        # Suppression de la géométrie si GeoDataFrame
-        if 'geometry' in final_df.columns:
-            final_df = final_df.drop(columns='geometry')
+    # Fusion finale
+    final_df = pd.concat(all_dfs, axis=0)
 
-        # Réorganisation des colonnes
-        cols = ['Country', 'Parcelle'] + [c for c in final_df.columns if c not in ['Country', 'Parcelle']]
-        return final_df[cols]
+    # Tri temporel si colonne date existe
+    if 'date' in final_df.columns:
+        final_df = final_df.sort_values('date')
 
-    return final_df
+    # Réorganisation des colonnes finales
+    column_order = ['Country', 'Parcelle', 'Latitude', 'Longitude', 'date'] + indices + ['Rendement']
+    return final_df[column_order].reset_index(drop=True)
 
+
+def load_filtered_data(country_codes, parcelles, dates_boulinsard, dates_normales, indices,
+                       min_rendement, max_rendement, min_indice, max_indice):
+    """
+    Charge et filtre les données selon les critères spécifiés
+
+    Args:
+        country_codes (list): Liste des codes pays (ex: ['FR', 'DE'])
+        parcelles (list): Liste des numéros de parcelles
+        dates_boulinsard (list): Dates au format Boulinsard à inclure
+        dates_normales (list): Dates normales à inclure
+        indices (list): Liste des indices végétation à conserver
+        min_rendement (float): Pourcentage minimal à exclure (0-100)
+        max_rendement (float): Pourcentage maximal à exclure (0-100)
+        min_indice (float): Pourcentage minimal de l'indice à exclure (0-100)
+        max_indice (float): Pourcentage maximal de l'indice à exclure (0-100)
+
+    Returns:
+        pd.DataFrame: DataFrame combiné avec colonnes [country, parcelle, date] + indices + ['rendement']
+    """
+    base_path = os.path.join(settings.BASE_DIR, "dashapp", "saved_parcelle_for_dash")
+    all_dfs = []
+    target_indice = indices[0] if indices else None
+
+    for country in country_codes:
+        for parcelle in parcelles:
+            file_path = os.path.join(base_path, country, str(parcelle), "utils", "filtered_dataframe.pkl")
+
+            if not os.path.exists(file_path):
+                warn(f"Fichier introuvable : {file_path}")
+                continue
+
+            try:
+                df = pd.read_pickle(file_path)
+
+                # Vérification de la structure
+                if not isinstance(df, pd.DataFrame) or df.empty:
+                    warn(f"DataFrame vide ou invalide : {file_path}")
+                    continue
+
+                # Gestion des dates
+                date_filter = []
+                if dates_boulinsard and 'date_boulinsard' in df.columns:
+                    date_filter.extend(dates_boulinsard)
+                if dates_normales and 'date' in df.columns:
+                    date_filter.extend(dates_normales)
+
+                if date_filter:
+                    if 'date' in df.index.names:
+                        df = df[df.index.get_level_values('date').isin(date_filter)]
+                    elif 'date' in df.columns:
+                        df = df[df['date'].isin(date_filter)]
+
+                # Calcul des seuils dynamiques
+                rendement_min = df['rendement'].quantile(min_rendement / 100.0)
+                rendement_max = df['rendement'].quantile(max_rendement / 100.0)
+                indice_min = df[target_indice].quantile(min_indice / 100.0) if target_indice else None
+                indice_max = df[target_indice].quantile(max_indice / 100.0) if target_indice else None
+
+                # Application des filtres
+                filters = [
+                    df['rendement'].between(rendement_min, rendement_max),
+                ]
+
+                if target_indice:
+                    filters.append(df[target_indice].between(indice_min, indice_max))
+
+                filtered_df = df[np.logical_and.reduce(filters)]
+
+                # Sélection des colonnes
+                cols_to_keep = ['date', 'rendement'] + indices
+                filtered_df = filtered_df[cols_to_keep].reset_index()
+
+                # Ajout des métadonnées
+                filtered_df['country'] = country
+                filtered_df['parcelle'] = parcelle
+
+                all_dfs.append(filtered_df)
+
+            except Exception as e:
+                warn(f"Erreur avec {file_path} : {str(e)}")
+                continue
+
+    if not all_dfs:
+        return pd.DataFrame()
+
+    final_df = pd.concat(all_dfs, ignore_index=True)
+
+    # Réorganisation des colonnes
+    column_order = ['country', 'parcelle', 'date'] + indices + ['rendement']
+    return final_df[column_order]
 
 def train_elasticnet_model(data):
     # Conversion des données
@@ -145,37 +278,52 @@ def create_3d_feature_space(X, y, coef, intercept):
     )
 
 
-def predict_elasticnet(model, pred_data, mode):
-    # Conversion selon le mode
-    if mode == 'points':
-        X_pred = pd.DataFrame([{
-            'lat': p['lat'],
-            'lon': p['lon'],
-            **p['data']
-        } for p in pred_data['points']])
-    else:
-        X_pred = load_filtered_data(
-            parcelles=pred_data['parcelles'],
-            dates=pred_data['dates'],
-            rendement_min=0,
-            rendement_max=10000,
-            indice_min=0,
-            indice_max=1,
-            indice_name=pred_data['indice']
-        )[model['features']]
+def predict_elasticnet(model, X_data):
+    """
+    Effectue des prédictions à partir de données déjà préparées par les vues
 
-    # Prédiction
-    predictions = model['pipeline'].predict(X_pred)
+    Args:
+        model (dict): Modèle entraîné contenant :
+            - 'pipeline': Pipeline sklearn entraîné
+            - 'features': Liste des caractéristiques utilisées
+        X_data (pd.DataFrame): Données préparées par la vue avec les colonnes nécessaires
 
-    return {
-        'predictions': predictions.tolist(),
-        'stats': {
-            'mean': float(np.mean(predictions)),
-            'std': float(np.std(predictions)),
-            'min': float(np.min(predictions)),
-            'max': float(np.max(predictions))
+    Returns:
+        dict: Résultats des prédictions avec statistiques
+    """
+    try:
+        # Vérification de la compatibilité des caractéristiques
+        missing_features = set(model['features']) - set(X_data.columns)
+        if missing_features:
+            raise ValueError(f"Caractéristiques manquantes : {missing_features}")
+
+        # Sélection des caractéristiques du modèle
+        X_pred = X_data[model['features']].copy()
+
+        # Prédictions
+        predictions = model['pipeline'].predict(X_pred)
+
+        # Conversion des résultats
+        return {
+            'predictions': predictions.tolist(),
+            'stats': {
+                'mean': float(np.nanmean(predictions)),
+                'std': float(np.nanstd(predictions)),
+                'min': float(np.nanmin(predictions)),
+                'max': float(np.nanmax(predictions)),
+                'q25': float(np.nanquantile(predictions, 0.25)),
+                'q75': float(np.nanquantile(predictions, 0.75))
+            },
+            'sample_data': {
+                'features': model['features'],
+                'example_prediction': predictions[0] if len(predictions) > 0 else None
+            }
         }
-    }
+
+    except Exception as e:
+        error_msg = f"Erreur de prédiction : {str(e)}"
+        print(error_msg)
+        return {'error': error_msg}
 
 def predict_elasticnet(model_dict, X_new):
     X_scaled = model_dict['scaler'].transform(X_new)

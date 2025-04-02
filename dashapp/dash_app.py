@@ -8,6 +8,8 @@ from dash import Dash, html, dcc, Input, Output, callback, State
 import plotly.express as px
 import pandas as pd
 import time
+from DataTest.settings import BASE_URL
+from django.urls import reverse
 from shapely.geometry import Point
 import plotly.graph_objects as go
 import geopandas as gpd
@@ -545,12 +547,21 @@ app.layout = html.Div([
             html.Div([
                 # Contenu existant pour la sélection des parcelles et les filtres
             html.H4("Filtres des données"),
-
+                # Sélection des parcelles
+            html.Div([
+                    html.Label("Sélectionner les pays pour l'entrainement:"),
+                    dcc.Dropdown(
+                        id='pays-train-selection',
+                        options=[{'label': k, 'value': v} for k, v in COUNTRIES.items()],
+                        multi=True,
+                        value=[default_country]
+                    )
+                ], style={'margin-bottom': '10px'}),
             # Sélection des parcelles
             html.Div([
-                html.Label("Sélectionner les parcelles :"),
+                html.Label("Sélectionner les parcelles pour l'entrainement:"),
                 dcc.Dropdown(
-                    id='parcelles-selection',
+                    id='parcelles-train-selection',
                     options=[{'label': p, 'value': p} for p in parcelles_disponibles],
                     multi=True,
                     value=[default_parcelle]
@@ -635,7 +646,7 @@ app.layout = html.Div([
                     html.Div([
                         html.Label("Sélectionner les indices utilisées pour l'entrainement :"),
                         dcc.Dropdown(
-                            id='indices-dropdown',
+                            id='training-indices-dropdown',
                             options=[{'label': idx, 'value': idx} for idx in indices],
                             multi=True,
                             value=['NDVI'],  # NDVI par défaut
@@ -658,7 +669,7 @@ app.layout = html.Div([
                             html.Div([
                                 html.Label("Dates utilisées pour l'entrainement autres parcelles:"),
                                 dcc.Dropdown(
-                                    id='dates-selected-fo-training',
+                                    id='dates-selected-for-training',
                                     options=[{'label': date, 'value': date} for date in LISTE_DATES],
                                     multi=True,
                                     value=[LISTE_DATES[0]] if LISTE_DATES else [],  # Date_1 par défaut
@@ -694,6 +705,7 @@ app.layout = html.Div([
             dcc.Store(id='prediction-points-store', data=[]),
             dcc.Store(id='prediction-data-store'),
             dcc.Store(id='training-data-store'),
+
             dcc.Store(id='map-view-state', storage_type='session',
                       data={"zoom": 12, "center": {"lat": (lat_min + lat_max) / 2, "lon": (lon_min + lon_max) / 2}}),
             dcc.Checklist(id='show-predictions', style={'display': 'none'})
@@ -717,6 +729,26 @@ def update_div_visibility(prediction_mode):
     else:
         # Par défaut, cacher les deux Divs (optionnel)
         return {'display': 'none'}, {'display': 'none'}
+
+
+@app.callback(
+    Output('parcelles-train-selection', 'options'),
+    Input('pays-train-selection', 'value')
+)
+def update_parcelles_dropdown(country_codes):
+    if not country_codes:
+        return []
+
+    all_parcelles = []
+    for country_code in country_codes:
+        parcelles = get_available_parcelles(country_code)
+        all_parcelles.extend(parcelles)
+
+    # Dédoublonnage et tri
+    unique_parcelles = list(set(all_parcelles))
+    unique_parcelles.sort()
+
+    return [{'label': p, 'value': p} for p in unique_parcelles]
 
 app.clientside_callback(
     """
@@ -787,11 +819,11 @@ def update_date_and_index_options(selected_parcelle, selected_country):
     options_date = [{'label': date, 'value': date} for date in dates]
     return options_date, dates[0], options_index, indices[0]  # Retourner le premier indice comme valeur par défaut  # Retourner la première date comme valeur par défaut
 
-
 app.clientside_callback(
     """
-    function(n_clicks, mode, dates_boulinsard, dates_normales, indices, points_store, 
-             rendement_min, rendement_max, indice_min, indice_max, csrf_token) {
+    function(n_clicks, mode, dates_boulinsard, dates_normales, indices, points_train_store, points_pred_store,
+             rendement_min, rendement_max, indice_min, indice_max, csrf_token, 
+             selected_parcelles, selected_countries) {
         if (!n_clicks) {
             return window.dash_clientside.no_update;
         }
@@ -807,12 +839,12 @@ app.clientside_callback(
                 indices: indices,
                 filters: {}
             },
-            country_code: "FR"
+            country_codes: selected_countries || ["FR"] // Valeur par défaut
         };
 
-        // Données spécifiques au mode
         if (mode === 'points') {
-            payload.training.parcelles = points_store;
+            payload.training.parcelles = points_train_store;
+            payload.prediction.parcelles = points_pred_store;
         } else {
             payload.training.filters = {
                 rendement_min: rendement_min,
@@ -820,10 +852,15 @@ app.clientside_callback(
                 indice_min: indice_min,
                 indice_max: indice_max
             };
+            // Ajout des parcelles et pays sélectionnés
+            payload.training.parcelles = selected_train_parcelles || [];
+            payload.training.country_codes = selected_train_countries || [];
+                        // Ajout des parcelles et pays sélectionnés
+            payload.prediction.parcelles = selected_pred_parcelles || [];
+            payload.prediction.country_codes = selected_pred_countries || [];
         }
 
-        // Envoi de la requête
-        return fetch('parcelles/', {
+        return fetch('/agri/demo/api/ml-pipeline/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -831,30 +868,47 @@ app.clientside_callback(
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Erreur serveur (" + response.status + ")");
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 throw new Error(data.error);
             }
-            return JSON.stringify(data);
+
+            if (data.result_id) {
+                const redirectUrl = `/ml-results/${data.result_id}/`;
+                const newWindow = window.open(redirectUrl, '_blank');
+
+                if (!newWindow || newWindow.closed) {
+                    throw new Error('Autorisez les popups pour voir les résultats');
+                }
+                return "Résultats disponibles dans le nouvel onglet";
+            }
+            throw new Error('Réponse serveur invalide');
         })
         .catch(error => {
-            return `Erreur: ${error.message}`;
+            console.error('Erreur:', error);
+            return `Échec de l'entraînement : ${error.message}`;
         });
     }
     """,
-    Output('training-result-output', 'children'),  # Ajoutez un Div pour afficher les résultats
+    Output('training-result-output', 'children'),
     [Input('train-model-btn', 'n_clicks')],
     [State('prediction-mode', 'value'),
      State('pred-dates-selection', 'value'),
-     State('dates-selected-fo-training', 'value'),
-     State('indices-dropdown', 'value'),
+     State('dates-selected-for-training', 'value'),
+     State('training-indices-dropdown', 'value'),
      State('training-points-store', 'data'),
+     State('prediction-points-store', 'data'),
      State('rendement-min-slider', 'value'),
      State('rendement-max-slider', 'value'),
      State('indice-min-slider', 'value'),
      State('indice-max-slider', 'value'),
-     State('csrf-token-store', 'data')]
+     State('csrf-token-store', 'data'),
+     State('parcelles-train-selection', 'value'),
+     State('country-dropdown', 'value')]
 )
 
 @app.callback(
@@ -892,7 +946,6 @@ def store_map_view(relayoutData, current_state):
 
 
 # Callback pour récupérer la sélection
-# Callback de sélection modifié
 @app.callback(
     Output('selected-points-store', 'data'),
     Input('map-graph', 'selectedData'),
@@ -900,33 +953,32 @@ def store_map_view(relayoutData, current_state):
 )
 def handle_selection(selectedData):
     if not selectedData:
-        print("Aucun point sélectionné.")
         return []
 
     points = []
     for p in selectedData['points']:
-        country_code = p['customdata'][0]
-        parcelle = p['customdata'][1]
-        lat = p['customdata'][3]
-        lon = p['customdata'][4]
+        try:
+            # Extraction des données depuis customdata (ajustez les indices selon votre implémentation)
+            country_code = p['customdata'][0]  # [0]
+            parcelle = p['customdata'][1]      # [1]
+            lat = p['lat']  # Utilisez directement les coordonnées du point cliqué
+            lon = p['lon']
+            rendement = p['customdata'][3]     # [2] Ajustez l'indice selon vos données
 
-        # Accéder au cache pour récupérer le DataFrame correspondant
-        key = f"{country_code}/{parcelle}"
-        dataframe = dataframes_cache.get(key)
-
-        if dataframe is not None:
-            point_data = dataframe[
-                (dataframe['Latitude'] == lat) &
-                (dataframe['Longitude'] == lon)
-            ]
             points.append({
                 'country_code': country_code,
                 'parcelle': parcelle,
                 'lat': lat,
                 'lon': lon,
-                'value': p['customdata'][5],
-                'data': point_data.to_dict('records')  # Inclure les données complètes du point
+                'data': {  # Structure directe en dict
+                    'Rendement': rendement,
+                    'Longitude': lon,
+                    'Latitude': lat
+                }
             })
+        except IndexError:
+            print("Structure customdata incorrecte")
+            continue
 
     return points
 
@@ -946,94 +998,161 @@ def generate_prediction_table(predictions):
         style={'margin-top': '20px'}
     )
 
-
 @app.callback(
-    Output('training-points-store', 'data'),
-    Input('add-train-points-btn', 'n_clicks'),
-    [State('selected-points-store', 'data'),
-     State('training-points-store', 'data'),
-     State('session-id-store', 'data'),
-     State('csrf-token-store', 'data')],
-    prevent_initial_call=True
+Output('training-points-store', 'data'),
+Input('add-train-points-btn', 'n_clicks'),
+[State('selected-points-store', 'data'),
+State('training-points-store', 'data'),
+State('session-id-store', 'data'),
+State('csrf-token-store', 'data')],
+prevent_initial_call=True
 )
-def add_training_points(n_clicks, selected_points, clean_existing_training_points, session_id, csrf_token):
+def add_training_points(n_clicks, selected_points, existing_training_points, session_id, csrf_token):
+    is_training_mode = True
+    if not selected_points:
+        return dash.no_update
+    relative_path = reverse('dashapp:save_points')  # /agri/demo/api/save-points/
+    full_url = f"{BASE_URL}{relative_path}"
     if not selected_points:
         return dash.no_update
 
-    # Appel API pour enregistrer les points en base
-    try:
-        response = requests.post(
-            '/api/save-points/',
-            json={
-                'session_id': session_id,
-                'points': selected_points
-            },
-            headers={
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrf_token
-            }
-        )
-
-        if response.status_code == 200:
-            # Traitement des points comme avant
-            new_training_point = []
-        for point in selected_points:
-            country_code = point['country_code']
-            parcelle = point['parcelle']
-            lat = float(point['lat'])  # Conversion en float
-            lon = float(point['lon'])  # Conversion en float
-
-            # Charger le DataFrame correspondant
-            plot_df = get_dataframe(country_code, parcelle)
-            # Batch processing pour tous les points
-            all_points = [
-                (Point(float(p['lon']), float(p['lat'])), p)
-                for p in selected_points
-            ]
-
-            # Conversion en GeoSeries projetée
-            search_points = gpd.GeoSeries(
-                [p[0] for p in all_points],
-                crs="EPSG:4326"
-            ).to_crs(epsg=32631).buffer(4)  # 10 mètres
-
-
-        clean_training_points = clean_existing_training_points or []
-        for point in new_training_point:
-            # Conversion des types et nettoyage des données
-            clean_point = {
+    # Nettoyage initial de tous les points
+    clean_points = []
+    for point in selected_points:
+        try:
+            # Validation et conversion des types
+            cleaned = {
+                'training': bool(is_training_mode),  # Conversion explicite
                 'country_code': str(point['country_code']),
                 'parcelle': str(point['parcelle']),
                 'lat': float(point['lat']),
                 'lon': float(point['lon']),
-                'value': float(point['value']),
                 'data': {
-                    'Latitude': float(point['data']['Latitude']),
-                    'Longitude': float(point['data']['Longitude']),
                     'Rendement': float(point['data']['Rendement']),
-                    'NDVI': float(point['data']['NDVI']) if point['data']['NDVI'] else None,
-                    'geometry': f"POINT ({point['data']['Longitude']} {point['data']['Latitude']})"  # WKT
+                    'Longitude': float(point['data']['Longitude']),
+                    'Latitude': float(point['data']['Latitude'])
                 }
             }
+            # Validation géographique supplémentaire
+            if not (-90 <= cleaned['lat'] <= 90) or not (-180 <= cleaned['lon'] <= 180):
+                raise ValueError("Coordonnées invalides")
 
-            # Conversion des NaN/None
-            for k, v in clean_point['data'].items():
-                if v is None:
-                    clean_point['data'][k] = 'N/A'
+            clean_points.append(cleaned)
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Point invalide exclu : {str(e)}")
+            continue
 
-            clean_training_points.append(clean_point)
-        print('clean training points:', clean_training_points[:10])
-        if not selected_points:
+    if not clean_points:
+        return dash.no_update
 
-            return clean_training_points
-        else:
-            print(f"Erreur API: {response.text}")
-            return clean_existing_training_points
+    total_clean = len(clean_points)
+    cutoff = (total_clean // 100) * 100  # Dernière centaine complète
+
+    try:
+        # Envoi des lots propres au serveur
+        if cutoff > 0:
+            response = requests.post(
+                full_url,  # Construction dynamique
+                json={
+                    'session_id': session_id,
+                    'points': clean_points[:cutoff]
+                },
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf_token  # Correction de la typo ici
+                }
+            )
+            if response.status_code != 200:
+                print(f"Erreur API: {response.text}")
+
+        # Gestion de la dernière centaine
+        last_hundred = clean_points[cutoff:]
+        updated_points =  last_hundred
+
+        # Limite à 100 derniers points valides
+        return updated_points[-100:]
 
     except Exception as e:
-        print(f"Exception: {str(e)}")
-        return clean_existing_training_points
+        print(f"Erreur globale : {str(e)}")
+        return existing_training_points or []
 
+@app.callback(
+Output('prediction-points-store', 'data'),
+Input('add-pred-points-btn', 'n_clicks'),
+[State('selected-points-store', 'data'),
+State('prediction-points-store', 'data'),
+State('session-id-store', 'data'),
+State('csrf-token-store', 'data')],
+prevent_initial_call=True
+)
+def add_prediction_points(n_clicks, selected_points, existing_prediction_points, session_id, csrf_token):
+    is_training_mode = False
+    if not selected_points:
+        return dash.no_update
+    relative_path = reverse('dashapp:save_points')  # /agri/demo/api/save-points/
+    full_url = f"{BASE_URL}{relative_path}"
+    if not selected_points:
+        return dash.no_update
+
+    # Nettoyage initial de tous les points
+    clean_points = []
+    for point in selected_points:
+        try:
+            # Validation et conversion des types
+            cleaned = {
+                'training': bool(is_training_mode),  # Conversion explicite
+                'country_code': str(point['country_code']),
+                'parcelle': str(point['parcelle']),
+                'lat': float(point['lat']),
+                'lon': float(point['lon']),
+                'data': {
+                    'Rendement': float(point['data']['Rendement']),
+                    'Longitude': float(point['data']['Longitude']),
+                    'Latitude': float(point['data']['Latitude'])
+                }
+            }
+            # Validation géographique supplémentaire
+            if not (-90 <= cleaned['lat'] <= 90) or not (-180 <= cleaned['lon'] <= 180):
+                raise ValueError("Coordonnées invalides")
+
+            clean_points.append(cleaned)
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Point invalide exclu : {str(e)}")
+            continue
+
+    if not clean_points:
+        return dash.no_update
+
+    total_clean = len(clean_points)
+    cutoff = (total_clean // 100) * 100  # Dernière centaine complète
+
+    try:
+        # Envoi des lots propres au serveur
+        if cutoff > 0:
+            response = requests.post(
+                full_url,  # Construction dynamique
+                json={
+                    'session_id': session_id,
+                    'points': clean_points[:cutoff]
+                },
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf_token  # Correction de la typo ici
+                }
+            )
+            if response.status_code != 200:
+                print(f"Erreur API: {response.text}")
+
+        # Gestion de la dernière centaine
+        last_hundred = clean_points[cutoff:]
+        updated_points =  last_hundred
+
+        # Limite à 100 derniers points valides
+        return updated_points[-100:]
+
+    except Exception as e:
+        print(f"Erreur globale : {str(e)}")
+        return existing_prediction_points or []
 
 @app.callback(
     Output('selections-display', 'children'),
@@ -1041,7 +1160,7 @@ def add_training_points(n_clicks, selected_points, clean_existing_training_point
     [State('session-id-store', 'data'),
      State('parcelle-dropdown', 'value'),
      State('country-dropdown', 'value'),
-     State('indices-dropdown', 'value')],
+     State('training-indices-dropdown', 'value')],
     prevent_initial_call=True
 )
 def display_saved_points(n_clicks, session_id, parcelle, country, indices):

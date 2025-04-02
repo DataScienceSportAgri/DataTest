@@ -110,6 +110,9 @@ PLOTLY_COMPONENTS = [
     'dash_renderer',
     'dash_bootstrap_components'
 ]
+
+BASE_URL = "http://localhost:8000"
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

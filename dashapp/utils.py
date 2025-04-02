@@ -86,3 +86,10 @@ def find_closest_point(df, lat, lon, max_distance=10):
         }
 
     return None
+
+def get_all_parcelle_numbers(country_code):
+    """Liste toutes les parcelles disponibles pour un pays donné"""
+    base_dir = os.path.join("saved_parcelle_for_dash", country_code)
+    if not os.path.exists(base_dir):
+        return []
+    return [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
