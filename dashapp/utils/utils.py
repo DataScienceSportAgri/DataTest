@@ -12,7 +12,7 @@ def get_dataframe(country_code, parcelle):
     Retourne un GeoDataFrame avec index spatial.
     """
     # Chemin vers les données
-    base_path = "saved_parcelle_for_dash"
+    base_path = "../saved_parcelle_for_dash"
     file_path = os.path.join(base_path, country_code, parcelle, "utils", "filtered_dataframe.pkl")
 
     # Vérifier si le fichier existe
@@ -89,7 +89,7 @@ def find_closest_point(df, lat, lon, max_distance=10):
 
 def get_all_parcelle_numbers(country_code):
     """Liste toutes les parcelles disponibles pour un pays donné"""
-    base_dir = os.path.join("saved_parcelle_for_dash", country_code)
+    base_dir = os.path.join("../saved_parcelle_for_dash", country_code)
     if not os.path.exists(base_dir):
         return []
     return [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]

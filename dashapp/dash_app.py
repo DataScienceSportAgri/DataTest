@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 import re
 import dash
-from dash import Dash, html, dcc, Input, Output, callback, State
+from dash import Dash, html, dcc, Input, Output, callback, State, ALL
 import plotly.express as px
 import pandas as pd
 import time
@@ -22,7 +22,7 @@ import matplotlib.pyplot as pl
 from django_plotly_dash import DjangoDash  # Remplacez Dash par DjangoDash
 from . import settings
 from django.core.cache import cache
-from .ElasticNet_models import predict_elasticnet, train_elasticnet_model, create_3d_feature_space  # Module personnalisé
+from .ElasticNet_models import predict_elasticnet, create_3d_feature_space  # Module personnalisé
 import joblib  # Ajouter cet import en haut du fichier
 from sklearn.metrics import r2_score
 import numpy as np
@@ -546,7 +546,7 @@ app.layout = html.Div([
             # Div pour le mode "filter"
             html.Div([
                 # Contenu existant pour la sélection des parcelles et les filtres
-            html.H4("Filtres des données"),
+            html.H4("Choisir les paramètres pour l'entrainement"),
                 # Sélection des parcelles
             html.Div([
                     html.Label("Sélectionner les pays pour l'entrainement:"),
@@ -567,6 +567,11 @@ app.layout = html.Div([
                     value=[default_parcelle]
                 )
             ], style={'margin-bottom': '10px'}),
+                # Conteneur pour les sélecteurs de dates
+                html.Div(id='date-selectors-container'),
+
+                # Stockage caché pour le dictionnaire
+                dcc.Store(id='dates-selection-store'),
             html.Div([
                 html.Div([
                     # Slider pour exclure les valeurs minimales (0-25%)
@@ -583,7 +588,7 @@ app.layout = html.Div([
                     ),
 
                     # Slider pour exclure les valeurs maximales (75-100%)
-                    html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
+                html.Label("Exclure les plus élevées:", style={'display': 'block', 'margin-top': '15px'}),
                     dcc.Slider(
                         id='rendement-max-slider',
                         min=75,
@@ -626,15 +631,25 @@ app.layout = html.Div([
                 html.Div(id='extremes-output', style={'margin-top': '20px'})
             ], style={'padding': '15px', 'border': '1px solid #eee'}),
             # Ajouter dans la section Machine Learning
+                        ], id='filter-mode-config')
+                    ], style={'padding': '15px', 'border': '1px solid #eee'}),
             html.Div([
                 html.H4("Configuration des prédictions"),
-
+                html.Div([
+                    html.Label("Sélectionner les pays pour la prédiction:"),
+                    dcc.Dropdown(
+                        id='pays-pred-selection',
+                        options=[{'label': k, 'value': v} for k, v in COUNTRIES.items()],
+                        multi=True,
+                        value=[default_country]
+                    )
+                ], style={'margin-bottom': '10px'}),
                 # Configuration pour le mode filtre
                 html.Div([
                     html.Div([
                         html.Label("Parcelles à prédire:"),
                         dcc.Dropdown(
-                            id='pred-parcelles-selection',
+                            id='parcelles-pred-selection',
                             options=[{'label': p, 'value': p} for p in parcelles_disponibles],
                             multi=True
                         )
@@ -653,34 +668,9 @@ app.layout = html.Div([
                             placeholder="Choisissez un ou plusieurs indices"
                         )
                     ], style={'margin-bottom': '10px'}),
+            ]),
 
-                html.Div([
-                            html.H4("Configuration des dates utilisées"),
-
-                            html.Div([
-                                html.Label("Dates utilisées pour l'entrainement Boulinsard:"),
-                                dcc.Dropdown(
-                                    id='pred-dates-selection',
-                                    options=[{'label': d, 'value': d} for d in LISTE_DATES_BOULINSARD],
-                                    multi=True
-                                )
-                            ], style={'margin-bottom': '10px'}),
-                            # Dropdown des dates
-                            html.Div([
-                                html.Label("Dates utilisées pour l'entrainement autres parcelles:"),
-                                dcc.Dropdown(
-                                    id='dates-selected-for-training',
-                                    options=[{'label': date, 'value': date} for date in LISTE_DATES],
-                                    multi=True,
-                                    value=[LISTE_DATES[0]] if LISTE_DATES else [],  # Date_1 par défaut
-                                    placeholder="Choisissez une ou plusieurs dates"
-                                )
-                            ], style={'margin-bottom': '10px'})
-                        ])
-                        ], id='filter-mode-config')
-                    ], style={'padding': '15px', 'border': '1px solid #eee'}),
-        ]),
-                html.Div([
+            html.Div([
                     html.Button("Lancer l'Entraînement", id='train-model-btn', n_clicks=0,
                                 style={'background-color': '#4CAF50', 'margin-right': '10px'}),
                     html.Button("Exécuter les Prédictions", id='predict-btn', n_clicks=0, style={'background-color': '#008CBA'})
@@ -690,7 +680,7 @@ app.layout = html.Div([
 
                 html.Div(id='training-result-output')
             ]),
-        html.Div([
+            html.Div([
             dcc.Graph(id='map-graph', figure=base_fig, style={'height': '80vh'}),
             html.Div(id='model-results', style={'margin-top': '20px'}),
             dcc.Store(id='csrf_token'),
@@ -709,7 +699,72 @@ app.layout = html.Div([
             dcc.Store(id='map-view-state', storage_type='session',
                       data={"zoom": 12, "center": {"lat": (lat_min + lat_max) / 2, "lon": (lon_min + lon_max) / 2}}),
             dcc.Checklist(id='show-predictions', style={'display': 'none'})
-        ], style={'padding': '20px'})
+        ], style={'padding': '20px'}),
+                html.Div([
+                    html.Div([
+                        html.Label("Buffer Distance Large (m) :"),
+                        dcc.Input(
+                            id='buffer-distance-large',
+                            type='number',
+                            value=500,
+                            min=100,
+                            max=2000,
+                            step=50,
+                            style={'margin': '5px'}
+                        )
+                    ], style={'padding': '10px'}),
+
+                    html.Div([
+                        html.Label("Buffer Distance Micro (m) :"),
+                        dcc.Input(
+                            id='buffer-distance-micro',
+                            type='number',
+                            value=50,
+                            min=10,
+                            max=200,
+                            step=10,
+                            style={'margin': '5px'}
+                        )
+                    ], style={'padding': '10px'}),
+
+                    html.Div([
+                        html.Label("Centroïde Vecteur (jours) :"),
+                        dcc.Input(
+                            id='centroid-vecteur',
+                            type='number',
+                            value=70,
+                            min=30,
+                            max=365,
+                            step=1,
+                            style={'margin': '5px'}
+                        )
+                    ], style={'padding': '10px'}),
+
+                    html.Div([
+                        html.Label("Valeur d'Arrivée (jours) :"),
+                        dcc.Input(
+                            id='vecteur-arrivee',
+                            type='number',
+                            value=130,
+                            min=60,
+                            max=365,
+                            step=1,
+                            style={'margin': '5px'}
+                        )
+                    ], style={'padding': '10px'}),
+
+                    html.Div([
+                        html.Label("Combinaisons de DataFrames :"),
+                        dcc.Dropdown(
+                            id='combinaisons-dataframe',
+                            options=[{'label': f'{n}² = {n ** 2}', 'value': n ** 2}
+                                     for n in range(2, 11)],  # Carrés de 2 à 10
+                            value=4,
+                            clearable=False,
+                            style={'width': '200px', 'margin': '5px'}
+                        )
+                    ], style={'padding': '10px'})
+                ], style={'padding': '20px', 'border': '1px solid #ddd', 'borderRadius': '5px'})
     ])
 ])
 
@@ -733,9 +788,30 @@ def update_div_visibility(prediction_mode):
 
 @app.callback(
     Output('parcelles-train-selection', 'options'),
-    Input('pays-train-selection', 'value')
+    Input('pays-train-selection', 'value'),
+    prevent_initial_call = True
 )
-def update_parcelles_dropdown(country_codes):
+def update_parcelles_dropdown_train(country_codes):
+    if not country_codes:
+        return []
+
+    all_parcelles = []
+    for country_code in country_codes:
+        parcelles = get_available_parcelles(country_code)
+        all_parcelles.extend(parcelles)
+
+    # Dédoublonnage et tri
+    unique_parcelles = list(set(all_parcelles))
+    unique_parcelles.sort()
+
+    return [{'label': p, 'value': p} for p in unique_parcelles]
+
+@app.callback(
+    Output('parcelles-pred-selection', 'options'),
+    Input('pays-pred-selection', 'value'),
+    prevent_initial_call=True
+)
+def update_parcelles_dropdown_pred(country_codes):
     if not country_codes:
         return []
 
@@ -819,47 +895,49 @@ def update_date_and_index_options(selected_parcelle, selected_country):
     options_date = [{'label': date, 'value': date} for date in dates]
     return options_date, dates[0], options_index, indices[0]  # Retourner le premier indice comme valeur par défaut  # Retourner la première date comme valeur par défaut
 
+
 app.clientside_callback(
     """
-    function(n_clicks, mode, dates_boulinsard, dates_normales, indices, points_train_store, points_pred_store,
-             rendement_min, rendement_max, indice_min, indice_max, csrf_token, 
-             selected_parcelles, selected_countries) {
+    function(n_clicks, mode, indices, points_train_store, points_pred_store,
+             rendement_min, rendement_max, indice_min, indice_max, csrf_token, session_id,
+             selected_train_parcelles, selected_train_countries, selected_pred_parcelles, selected_pred_countries,
+             macrobuffer, microbuffer, centroid, arrivee, comb) {
         if (!n_clicks) {
             return window.dash_clientside.no_update;
         }
 
-        // Construction du payload
         const payload = {
+            othervalues: {
+                macrobuffer:macrobuffer,
+                microbuffer:microbuffer,
+                centroid:centroid,
+                arivee:arrivee,
+                comb:comb
+            },
             training: {
                 mode: mode,
-                dates: {
-                    boulinsard: dates_boulinsard,
-                    normales: dates_normales
-                },
+                country_codes: selected_train_countries,
+                parcelles: selected_train_parcelles,
+                session: session_id,
                 indices: indices,
-                filters: {}
+                filters: {
+                    rendement_min: rendement_min,
+                    rendement_max: rendement_max,
+                    indice_min: indice_min,
+                    indice_max: indice_max
+                },
+                points : points_train_store
             },
-            country_codes: selected_countries || ["FR"] // Valeur par défaut
+            prediction: {
+                mode: mode,
+                session: session_id,
+                country_codes: selected_pred_countries,
+                parcelles: selected_pred_parcelles,
+                points: points_pred_store
+            }
         };
 
-        if (mode === 'points') {
-            payload.training.parcelles = points_train_store;
-            payload.prediction.parcelles = points_pred_store;
-        } else {
-            payload.training.filters = {
-                rendement_min: rendement_min,
-                rendement_max: rendement_max,
-                indice_min: indice_min,
-                indice_max: indice_max
-            };
-            // Ajout des parcelles et pays sélectionnés
-            payload.training.parcelles = selected_train_parcelles || [];
-            payload.training.country_codes = selected_train_countries || [];
-                        // Ajout des parcelles et pays sélectionnés
-            payload.prediction.parcelles = selected_pred_parcelles || [];
-            payload.prediction.country_codes = selected_pred_countries || [];
-        }
-
+        // Envoi au serveur
         return fetch('/agri/demo/api/ml-pipeline/', {
             method: 'POST',
             headers: {
@@ -869,36 +947,32 @@ app.clientside_callback(
             body: JSON.stringify(payload)
         })
         .then(response => {
-            if (!response.ok) throw new Error("Erreur serveur (" + response.status + ")");
+            if (!response.ok) {  // Gestion des erreurs HTTP
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            if (data.result_id) {
-                const redirectUrl = `/ml-results/${data.result_id}/`;
-                const newWindow = window.open(redirectUrl, '_blank');
-
-                if (!newWindow || newWindow.closed) {
-                    throw new Error('Autorisez les popups pour voir les résultats');
+            if (data.error) throw new Error(data.error);
+            
+            if (data.redirect_url) {
+                const win = window.open(data.redirect_url, '_blank');
+                if (!win || win.closed) {
+                    throw new Error('Autorisez les popups');
                 }
                 return "Résultats disponibles dans le nouvel onglet";
             }
-            throw new Error('Réponse serveur invalide');
+            throw new Error('Données manquantes dans la réponse');
         })
-        .catch(error => {
+        .catch(error => {  // Bloc catch manquant
             console.error('Erreur:', error);
-            return `Échec de l'entraînement : ${error.message}`;
+            return `Échec de la requête : ${error.message}`;
         });
     }
     """,
     Output('training-result-output', 'children'),
     [Input('train-model-btn', 'n_clicks')],
     [State('prediction-mode', 'value'),
-     State('pred-dates-selection', 'value'),
-     State('dates-selected-for-training', 'value'),
      State('training-indices-dropdown', 'value'),
      State('training-points-store', 'data'),
      State('prediction-points-store', 'data'),
@@ -907,9 +981,51 @@ app.clientside_callback(
      State('indice-min-slider', 'value'),
      State('indice-max-slider', 'value'),
      State('csrf-token-store', 'data'),
+     State('session-id-store', 'data'),
      State('parcelles-train-selection', 'value'),
-     State('country-dropdown', 'value')]
+     State('pays-train-selection', 'value'),
+     State('parcelles-pred-selection', 'value'),
+     State('pays-pred-selection', 'value'),
+     State('buffer-distance-large', 'value'),
+     State('buffer-distance-micro', 'value'),
+     State('centroid-vecteur', 'value'),
+     State('vecteur-arrivee', 'value'),
+     State('combinaisons-dataframe', 'value')]
 )
+
+# Callback pour générer les sélecteurs de dates
+@callback(
+    Output('date-selectors-container', 'children'),
+    Input('parcelles-train-selection', 'value')
+)
+def update_date_selectors(selected_parcelles):
+    children = []
+    for parcelle in selected_parcelles:
+        dates = LISTE_DATES_BOULINSARD if parcelle == 'Boulinsard' else LISTE_DATES
+        children.append(
+            html.Div([
+                html.Label(f"Dates pour {parcelle}:"),
+                dcc.Dropdown(
+                    id={'type': 'date-selector', 'index': parcelle},
+                    options=[{'label': d, 'value': d} for d in dates],
+                    multi=True,
+                    value=dates
+                )
+            ], style={'margin': '10px'})
+        )
+    return children
+
+# Callback pour construire le dictionnaire
+@callback(
+    Output('dates-selection-store', 'data'),
+    Input({'type': 'date-selector', 'index': ALL}, 'value'),
+    State({'type': 'date-selector', 'index': ALL}, 'id')
+)
+def build_dates_dict(date_values, date_ids):
+    return {
+        entry['index']: value
+        for entry, value in zip(date_ids, date_values)
+    }
 
 @app.callback(
     Output('map-view-state', 'data'),
