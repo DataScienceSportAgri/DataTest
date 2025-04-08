@@ -29,18 +29,26 @@ header {
     text-decoration: none;
     border-radius: 5px;
 }
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding-bottom: 130px; /* Hauteur de votre footer */
+}
 
 .auth-button:hover {
     background-color: #0056b3;
 }
 footer {
+    position: fixed;
+    bottom: 0;
     width: 100%;
     padding: 10px;
     background-color: #f0f0f0;
     text-align: center;
-    position: relative;
-    clear: both; /* Force le footer sous tout le contenu */
 }
+
 
 h1 {
     font-size: 3em;

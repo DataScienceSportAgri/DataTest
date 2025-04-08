@@ -1,5 +1,4 @@
-console.log(window.isRefreshing);
-console.log('chart_update.js loaded');
+
 
 function getCookie(name) {
     let cookieValue = null;
@@ -32,7 +31,6 @@ function updateGraph(newData) {
     }
 
     if (typeof Plotly !== 'undefined') {
-        console.log("Plotly est correctement chargé");
         Plotly.react('chart-container', newData.data, newData.layout);
     } else {
         console.error("Plotly n'est pas chargé correctement");
@@ -41,7 +39,6 @@ function updateGraph(newData) {
 
 function postUpdates() {
 window.isRefreshing = true;
-  console.log('Sending update request to server');
 
   // Récupérer le jeton CSRF
   let csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -53,16 +50,21 @@ window.isRefreshing = true;
     console.error('CSRF token not found. Request may fail.');
   }
 
+
+  var selectedCourseTypes = Array.isArray(chartConfig.typeList)
+      ? window.chartConfig.typeList
+      : [window.chartConfig.typeList];
+
   // Préparer les données à envoyer
   const data = {
     action: 'update',
-    seriesCategories: window.chartConfig.seriesCategories || {},
-    minDistance: window.chartConfig.minDistance,
-    maxDistance: window.chartConfig.maxDistance,
-    course_types: window.chartConfig.type_list,
-    loaded_count: window.chartConfig.loadedCount
+    seriesCategories: chartConfig.seriesCategories || {},
+    minDistance: chartConfig.minDistance,
+    maxDistance: chartConfig.maxDistance,
+    course_types: chartConfig.typeList,
+    loaded_count: chartConfig.loadedCount,
+      colors:     chartConfig.colors
   };
-  console.log('nouvelles données envoyées au serveur', data)
 
   // Convertir l'objet en chaîne JSON
   const jsonData = JSON.stringify(data);
@@ -84,7 +86,6 @@ window.isRefreshing = true;
     return response.json();
   })
   .then(data => {
-    console.log("Succès d'update':", data);
 
     // Mettre à jour le graphique
     updateGraph(data.plot_data);
@@ -127,7 +128,6 @@ window.isRefreshing = true;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Setting up periodic updates');
-    console.log('info' + window.chartConfig.refreshInterval);
 
     updateCountdown({
         countdown: Math.floor(window.chartConfig.refreshInterval / 1000),

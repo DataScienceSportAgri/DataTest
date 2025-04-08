@@ -135,7 +135,7 @@ def get_dates(parcelle, country, gdf):
 
 
 
-def load_points_data(session_id, noms_dates, noms_dates_boulinsard, indices, points_client):
+def load_points_data(session_id, parcelles_dates_dict, indices, points_client):
     """
     Charge les données des points sauvegardés dans la session et sur le client,
     construit un DataFrame unifié avec tri temporel et sélection d'indices.
@@ -208,12 +208,18 @@ def load_points_data(session_id, noms_dates, noms_dates_boulinsard, indices, poi
             # Filtrage des lignes correspondant aux indexes valides
             df_filtered = df.iloc[valid_indexes].copy()
 
-            # Filtrage par noms de dates
-            if 'date' in df.index.names:
-                if noms_dates_boulinsard and 'boulinsard' in df.columns:
-                    df_filtered = df_filtered[df_filtered['boulinsard'].isin(noms_dates_boulinsard)]
-                elif noms_dates and 'date' in df.columns:
-                    df_filtered = df_filtered[df_filtered['date'].isin(noms_dates)]
+            # Étape 1 : Réinitialiser l'index des dates pour les convertir en colonne
+            df = df.reset_index(names='date')  # Si l'index s'appelle 'date'
+
+            # Étape 2 : Filtrer le DataFrame pour chaque parcelle et combiner les résultats
+            filtered_dfs = []
+            for parcelle, dates in parcelles_dates_dict.items():
+                mask = (df['parcelle'] == parcelle) & (df['date'].isin(dates))
+                filtered_df = df[mask]
+                filtered_dfs.append(filtered_df)
+
+            # Étape 3 : Concaténer tous les DataFrames filtrés
+            df_filtered = pd.concat(filtered_dfs, ignore_index=True)
 
             # Sélection des colonnes spécifiées par les indices
             columns_to_keep = ['date'] + indices + ['Rendement']
@@ -487,7 +493,10 @@ def vectorize_data(data: pd.DataFrame, buffer_distance: float = 500, microbuffer
     print('data',data)
     features = data.columns.difference(EXCLUDE_COLS).tolist()
     vector_data = pd.DataFrame(columns=[['country','parcelle','point_id','longitude','latitude'] + features + ['Rendement']])
+    # Assurez-vous que les colonnes sont de type object
+    vector_data = vector_data.astype({feature: 'object' for feature in features})
     # Itération par groupe parcelle/pays
+    n=0
     for (parcelle, country), group in tqdm(data.groupby(['parcelle', 'country']),
                                           desc="Processing zones"):
         # Conversion en GeoDataFrame
@@ -500,7 +509,7 @@ def vectorize_data(data: pd.DataFrame, buffer_distance: float = 500, microbuffer
 
         # Récupération des dates
         dates = get_dates(parcelle, country, gdf)
-        print('dates',dates)
+
         # Découpage en sous-zones géométriques
         gdf_sous_zones = decouper_parcelle(gdf, buffer_distance)
 
@@ -512,13 +521,12 @@ def vectorize_data(data: pd.DataFrame, buffer_distance: float = 500, microbuffer
 
 
             Rendements = gdf_sous_zone['Rendement'].tolist()
-            print('sous_zone_groupe',gdf_sous_zone)
+
             # Itération sur les caractéristiques
             for feature in tqdm(features,desc=f"{parcelle}-{country}"):
                 # Agrégation spatiale et temporelle
                 # À l'intérieur de votre boucle sur les sous_zones :
 
-                print('sous_zone_groupe',gdf_sous_zone[['point_id','Latitude','Longitude', 'date']+[feature]])
                 time_series_df = create_long_format_ts(gdf_sous_zone[['point_id','Latitude','Longitude', 'date']+[feature]], dates)
                 # Transformation du format long vers wide
                 df_wide = time_series_df.pivot_table(
@@ -527,7 +535,7 @@ def vectorize_data(data: pd.DataFrame, buffer_distance: float = 500, microbuffer
                     values='feature_value',
                     aggfunc='first'  # À remplacer par mean() si valeurs multiples
                 ).reset_index()
-                print('df_wide',df_wide)
+
                 # Exemple de sortie :
                 a = 0
                 gdf_wide = gpd.GeoDataFrame(
@@ -535,25 +543,26 @@ def vectorize_data(data: pd.DataFrame, buffer_distance: float = 500, microbuffer
                     geometry=gpd.points_from_xy(df_wide['longitude'], df_wide['latitude']),
                     crs="EPSG:4326"  # WGS84 standard
                 ).pipe(project_gdf, country_code=country)
-                print('gdf_wide',gdf_wide)
+
                 for idx, point in gdf_wide.iterrows():
 
                     # Création du buffer unique pour la zone
                     buffer = point.geometry.buffer(microbuffer)
                     # Filtrage des points dans le rayon
                     points_around = gdf_wide[gdf_wide.geometry.within(buffer)]
-                    print('points_around',points_around)
+
                     vectors = create_spatiotemporal_vectors(point, points_around, dates)
-                    print('vectors',vectors)
-                    vector_data.loc[len(vector_data),'country'] = country
-                    vector_data.loc[len(vector_data),'parcelle'] = parcelle
-                    vector_data.loc[len(vector_data),'point_id'] = df_wide['point_id']
-                    vector_data.loc[len(vector_data),'latitude'] = df_wide['latitude']
-                    vector_data.loc[len(vector_data),'longitude'] = df_wide['longitude']
-                    vector_data.loc[len(vector_data),features] = vectors
-                    vector_data.loc[len(vector_data),'Rendement'] = Rendements[a]
+
+                    vector_data.loc[n,'country'] = country
+                    vector_data.loc[n,'parcelle'] = parcelle
+                    vector_data.loc[n,'point_id'] = df_wide['point_id']
+                    vector_data.loc[n,'latitude'] = df_wide['latitude']
+                    vector_data.loc[n,'longitude'] = df_wide['longitude']
+                    vector_data.loc[n,feature] = [vectors]
+                    vector_data.loc[n,'Rendement'] = Rendements[a]
                     a+=1
-                print('vector_data',vector_data)
+                    n+=1
+        print('vector_data',vector_data)
 
     return vector_data
 

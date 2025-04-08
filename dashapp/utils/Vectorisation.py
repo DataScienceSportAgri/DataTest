@@ -49,7 +49,7 @@ def create_spatiotemporal_vectors(point_data: pd.Series,
     """
     # Calcul des jours depuis le début
     columns = point_data.index.tolist()
-    print('columns',columns)
+
     # Filtrer les floats et integers
     numbers = [i for i in columns if isinstance(i, (int, float))]
 
@@ -59,19 +59,20 @@ def create_spatiotemporal_vectors(point_data: pd.Series,
         days = digits
     else:
         days = numbers
-    print('days',days)
+
     # Calcul des poids spatiaux
     distances = neighbors_data.geometry.distance(point_data.geometry)
     weights = 1 / (1 + distances)
     weights /= weights.sum()
 
     vectors = []
+    neighbors_data.columns = neighbors_data.columns.map(str)
     for i, day in enumerate(days):
         # Valeur du point central
         val_point = point_data[float(day)]
 
         # Valeur moyenne pondérée des voisins
-        val_voisins = np.average(neighbors_data.iloc[:, i], weights=weights)
+        val_voisins = np.average(neighbors_data.loc[:, str(day)], weights=weights)
 
         # Combinaison tempérée (70% point + 30% voisins)
         val_temperee = 0.7 * val_point + 0.3 * val_voisins

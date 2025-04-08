@@ -452,6 +452,7 @@ base_fig.update_layout(
 # Layout complet de l'application avec le dropdown d'indices corrigé
 app.layout = html.Div([
     html.H1('Analyse des Parcelles Agricoles'),
+dcc.Store(id='trigger-initial-load', data='init'),
 
     # Première ligne - Sélecteurs principaux
     html.Div([
@@ -554,7 +555,7 @@ app.layout = html.Div([
                         id='pays-train-selection',
                         options=[{'label': k, 'value': v} for k, v in COUNTRIES.items()],
                         multi=True,
-                        value=[default_country]
+                        value=[COUNTRIES[default_country]]
                     )
                 ], style={'margin-bottom': '10px'}),
             # Sélection des parcelles
@@ -564,11 +565,22 @@ app.layout = html.Div([
                     id='parcelles-train-selection',
                     options=[{'label': p, 'value': p} for p in parcelles_disponibles],
                     multi=True,
-                    value=[default_parcelle]
+                    value=[p for p in [default_parcelle] if p in parcelles_disponibles]
                 )
             ], style={'margin-bottom': '10px'}),
-                # Conteneur pour les sélecteurs de dates
-                html.Div(id='date-selectors-container'),
+                # Conteneur pour les sélecteurs de dates (pré-initialisé avec la première parcelle)
+                html.Div(id='date-selectors-container', children=[
+                    html.Div([
+                        html.Label(f"Dates pour {default_parcelle}:"),
+                        dcc.Dropdown(
+                            id={'type': 'date-selector', 'index': default_parcelle},
+                            options=[{'label': d, 'value': d} for d in
+                                     (LISTE_DATES_BOULINSARD if default_parcelle == 'Boulinsard' else LISTE_DATES)],
+                            multi=True,
+                            value=([LISTE_DATES_BOULINSARD[0]] if default_parcelle == 'Boulinsard' else [LISTE_DATES[0]])
+                        )
+                    ], style={'margin': '10px'})
+                ]),
 
                 # Stockage caché pour le dictionnaire
                 dcc.Store(id='dates-selection-store'),
@@ -768,6 +780,7 @@ app.layout = html.Div([
     ])
 ])
 
+
 # Callback pour mettre à jour l'affichage des Divs
 @app.callback(
     [Output('points-mode-div', 'style'),
@@ -900,7 +913,7 @@ app.clientside_callback(
     """
     function(n_clicks, mode, indices, points_train_store, points_pred_store,
              rendement_min, rendement_max, indice_min, indice_max, csrf_token, session_id,
-             selected_train_parcelles, selected_train_countries, selected_pred_parcelles, selected_pred_countries,
+             parcelles_dates_dict, selected_train_countries, selected_pred_parcelles, selected_pred_countries,
              macrobuffer, microbuffer, centroid, arrivee, comb) {
         if (!n_clicks) {
             return window.dash_clientside.no_update;
@@ -917,7 +930,7 @@ app.clientside_callback(
             training: {
                 mode: mode,
                 country_codes: selected_train_countries,
-                parcelles: selected_train_parcelles,
+                parcelles_dates_dict: parcelles_dates_dict,
                 session: session_id,
                 indices: indices,
                 filters: {
@@ -982,7 +995,7 @@ app.clientside_callback(
      State('indice-max-slider', 'value'),
      State('csrf-token-store', 'data'),
      State('session-id-store', 'data'),
-     State('parcelles-train-selection', 'value'),
+     State('dates-selection-store', 'data'),
      State('pays-train-selection', 'value'),
      State('parcelles-pred-selection', 'value'),
      State('pays-pred-selection', 'value'),
@@ -993,15 +1006,27 @@ app.clientside_callback(
      State('combinaisons-dataframe', 'value')]
 )
 
-# Callback pour générer les sélecteurs de dates
-@callback(
+
+@app.callback(
     Output('date-selectors-container', 'children'),
-    Input('parcelles-train-selection', 'value')
+    Input('parcelles-train-selection', 'value'),
+    prevent_initial_call=False
 )
 def update_date_selectors(selected_parcelles):
+    print(f"\n--- Déclenchement du callback update_date_selectors ---")
+    print(f"Valeur reçue de 'parcelles-train-selection' : {selected_parcelles}")
+
+    if not selected_parcelles:
+        print("Aucune parcelle sélectionnée -> retourne un conteneur vide")
+        return []
+
     children = []
-    for parcelle in selected_parcelles:
+    for i, parcelle in enumerate(selected_parcelles):
+        # Vérification de l'existence de la parcelle
         dates = LISTE_DATES_BOULINSARD if parcelle == 'Boulinsard' else LISTE_DATES
+        print(f"\nParcelle {i + 1}/{len(selected_parcelles)}: {parcelle}")
+        print(f"Dates disponibles: {dates} (type: {type(dates)})")
+
         children.append(
             html.Div([
                 html.Label(f"Dates pour {parcelle}:"),
@@ -1009,23 +1034,56 @@ def update_date_selectors(selected_parcelles):
                     id={'type': 'date-selector', 'index': parcelle},
                     options=[{'label': d, 'value': d} for d in dates],
                     multi=True,
-                    value=dates
+                    value=[dates[0]]
                 )
             ], style={'margin': '10px'})
         )
+        print(f"Dropdown créé pour {parcelle} avec {len(dates)} options")
+
+    print(f"\nNombre de sélecteurs générés: {len(children)}")
+    print("--- Fin du callback ---\n")
+
     return children
 
+
 # Callback pour construire le dictionnaire
-@callback(
+@app.callback(
     Output('dates-selection-store', 'data'),
     Input({'type': 'date-selector', 'index': ALL}, 'value'),
-    State({'type': 'date-selector', 'index': ALL}, 'id')
+    State({'type': 'date-selector', 'index': ALL}, 'id'),
+    prevent_initial_call=False
 )
 def build_dates_dict(date_values, date_ids):
-    return {
-        entry['index']: value
-        for entry, value in zip(date_ids, date_values)
-    }
+    print("\n--- Début build_dates_dict ---")
+
+    # Log des entrées brutes
+    print(f"Reçu {len(date_ids)} ID(s) de dropdown :")
+    for i, entry in enumerate(date_ids):
+        print(f"  {i + 1}. {entry}")
+
+    print(f"\nReçu {len(date_values)} valeur(s) de dates :")
+    for i, value in enumerate(date_values):
+        print(f"  {i + 1}. {value}")
+
+    # Construction du dictionnaire
+    dates_dict = {}
+    try:
+        for entry, value in zip(date_ids, date_values):
+            parcelle = entry['index']
+            dates_dict[parcelle] = value
+            print(f"\nTraitement {parcelle} :")
+            print(f"  - ID complet : {entry}")
+            print(f"  - Dates sélectionnées : {value} ({len(value)} éléments)")
+    except Exception as e:
+        print(f"\nERREUR lors de la construction : {str(e)}")
+
+    # Log du résultat final
+    print("\nDictionnaire généré :")
+    for parcelle, dates in dates_dict.items():
+        print(f"  - {parcelle}: {dates} ({len(dates)} dates)")
+
+    print(f"\n--- Fin build_dates_dict ---\n")
+    return dates_dict
 
 @app.callback(
     Output('map-view-state', 'data'),
