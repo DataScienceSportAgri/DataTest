@@ -67,7 +67,8 @@ class ResultatCourse(models.Model):
     temps2 = models.DurationField(null=True, blank=True)
     position = models.IntegerField()
     categorie = models.ForeignKey(Categorie, on_delete=models.CASCADE, null=True, blank=True)
-    score_de_performance = models.FloatField(null=True, blank=True)
+    score_de_performance_vitesse = models.FloatField(null=True, blank=True)
+    score_de_performance_global = models.FloatField(null=True, blank=True)
 
     class Meta:
         unique_together = ('coureur', 'course')

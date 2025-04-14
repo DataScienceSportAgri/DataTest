@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    <h2>Évolution des types de courses par année</h2>
+    <div class="chart-container">
+        {{ plot_html|safe }}
+    </div>
+    
+    <style>
+        .chart-container {
+            margin: 20px 0;
+            max-width: 1000px;
+        }
+    </style>
+{% endblock %}

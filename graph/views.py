@@ -1,3 +1,5 @@
+from datetime import time
+from .utils.plot_utils import generate_figure, get_base_data, get_more_data, generate_score_plot, evolution_types_courses
 from django.core.serializers import serialize
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -25,7 +27,8 @@ from django.db.models import F, ExpressionWrapper, DurationField, FloatField
 from django.views.decorators.csrf import csrf_exempt
 import ast
 import re
-
+from plotly.offline import plot
+import plotly.express as px
 
 
 class CourseList(generic.ListView):
@@ -1015,3 +1018,86 @@ class VitesseDistributionView(TemplateView):
                           violinmode="group")
 
         return fig.to_html(full_html=False)
+
+
+
+class ScoreDistributionView(TemplateView):
+    template_name = 'graph/score_distribution.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        df, initial_ids = get_base_data()
+        fig = generate_figure(df, 'vitesse')
+        self.request.session['displayed_ids'] = initial_ids
+        context['graph1'] = fig
+        return context
+
+    def get(self, request, *args, **kwargs):
+        # Vérifier si c'est une requête AJAX pour rafraîchir les données
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if request.GET.get('action') == 'submit':
+                print('submit')
+                response_data = self.handle_submit(request)
+                return response_data  # Retourne directement le contexte
+            else:
+                return self.get_updated_data(request)
+        print("N'est pas une requête ajax")
+        # Sinon, rendu normal de la page
+        return super().get(request, *args, **kwargs)
+
+    def handle_submit(self, request):
+        """Gestion des changements dus au formulaire"""
+        graph = request.GET.get('graph')
+        score_type = request.GET.get('score_type', 'vitesse')
+        print('score_type', score_type)
+        if graph == 'graph1':
+            context = self.get_graph1_data(score_type)
+        else:
+            context = self.get_graph2_data(score_type)
+
+        html = render_to_string('graph/_score_distribution_partial.html', context, request=request)
+
+        response_data = {
+            'html': html
+        }
+
+        return JsonResponse(response_data)
+
+    def get_updated_data(self, request):
+        """Récupère de nouvelles données et met à jour le graphique"""
+        score_type = request.GET.get('score_type', 'vitesse')
+
+        # Récupérer de nouvelles données (sans dupliquer les IDs déjà affichés)
+        df_full = get_more_data(request)
+        # Générer le graphique avec les nouvelles données
+        new_data = generate_score_plot(df_full, score_type)
+
+        # Retourner les données en JSON
+        return JsonResponse({
+            'new_data': new_data,
+            'total_displayed': request.session.get('displayed_ids', 0)
+        })
+
+    def get_graph1_data(self, score_type, **kwargs):
+        template_name = 'graph/_score_distribution_partial.html'
+        context = super().get_context_data(**kwargs)
+        """Générer le graphique 1 en fonction du type de score"""
+        df, initial_ids = get_base_data()
+        fig = generate_figure(df, score_type)
+
+        self.request.session['displayed_ids'] = initial_ids
+        context['graph1'] = fig
+        return context
+
+    def get_graph2_data(self, score_type):
+        """Générer un autre graphique (si nécessaire)"""
+        return {'graph': '<p>Graph 2 placeholder (à remplir)</p>'}
+
+class StatGlobalView(TemplateView):
+    template_name = 'graph/stat_global.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        fig = evolution_types_courses()
+        context['plot_html'] = fig
+        return context

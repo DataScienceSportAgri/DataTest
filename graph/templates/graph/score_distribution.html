@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% csrf_token %}
+{% load static %}
+
+{% block content %}
+    <script src="{% static 'js/ScoreDistribution.js' %}"></script>
+
+    <h2>Distribution et évolution des scores</h2>
+
+    <div class="graph-wrapper">
+        <!-- Colonne de gauche -->
+        <div class="graph-left">
+            <h3>Evolution des scores de tous les coureurs</h3>
+
+            <div class="controls">
+                <form id="scoreFormLeft">
+                    <label>
+                        <input type="radio" name="scoreType" value="vitesse" checked> Vitesse
+                    </label>
+                    <label>
+                        <input type="radio" name="scoreType" value="global"> Global
+                    </label>
+                </form>
+            </div>
+
+            <div id="graph-wrapper" style="width: 100%; height: 620px;">
+                {% include "graph/_score_distribution_partial.html" %}
+            </div>
+        </div>
+
+        <!-- Colonne de droite -->
+        <div class="graph-right">
+            <h3>Evolution de la performance par % arrivée catégorie</h3>
+
+            <div class="controls">
+                <form id="scoreFormRight">
+                    <!-- Type de score -->
+                    <div class="radio-group">
+                        <h4>Type de score :</h4>
+                        <label><input type="radio" name="scoreType" value="vitesse" checked> Vitesse</label>
+                        <label><input type="radio" name="scoreType" value="global"> Global</label>
+                    </div>
+
+                    <!-- Niveaux de performance -->
+                    <div class="radio-group">
+                        <h4>Niveaux de performance :</h4>
+                        <label><input type="radio" name="performanceTier" value="all" checked> Tous (tranches 25%)</label>
+                        <label><input type="radio" name="performanceTier" value="top35"> Top 35% (tranches 5%)</label>
+                        <label><input type="radio" name="performanceTier" value="bottom80"> Bottom 80% (tranches 10%)</label>
+                    </div>
+
+                    <!-- Cohorte -->
+                    <div class="radio-group">
+                        <h4>Population :</h4>
+                        <label><input type="radio" name="cohortType" value="same" checked> Coureurs identiques</label>
+                        <label><input type="radio" name="cohortType" value="all"> Tous les coureurs</label>
+                    </div>
+                </form>
+            </div>
+
+            <div class="graph-container">
+                rien
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'plotly.js-dist/plotly.js' %}"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}

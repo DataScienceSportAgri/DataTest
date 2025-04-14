@@ -4,7 +4,11 @@
 
 {% block content %}
 <h2>Liste des courses</h2>
-<a href="{% url 'graph:vitesse_distribution' %}" class="btn btn-primary">Voir la distribution des vitesses</a>
+<div class="button-container">
+    <a href="{% url 'graph:vitesse_distribution' %}" id="btn-primary">Voir la distribution des vitesses</a>
+    <a href="{% url 'graph:score_distribution' %}" id="btn-secondary">Voir l'évolution des scores de performance</a>
+    <a href="{% url 'graph:stat_global' %}" id="btn-tertiary">Voir des statistiques globales sur les données</a>
+</div>
 <link rel="stylesheet" href="{% static 'css/styles.css' %}">
         <form method="get" action="{% url 'graph:search_results' %}">
     <div>
