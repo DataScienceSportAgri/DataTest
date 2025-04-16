@@ -395,3 +395,44 @@ h2 {
         0 -2px 0 white; /* Liseré blanc */
     padding: 15px;
 }
+
+
+
+.tooltiptext {
+    visibility: hidden;
+    opacity: 0;
+    position: relative; /* Take it out of document flow completely */
+    width: 0;      /* Keep consistent width before and after hover */
+    background-color: #222;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 10px;
+    z-index: 9999;
+    left: 110%;        /* Position outside the element */
+    top: 50%;
+    transform: translateY(-50%);
+    transition: opacity 0.3s, visibility 0.3s;
+    font-size: 0.95em; /* Keep consistent font size */
+    line-height: normal;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    white-space: pre-line;
+}
+
+.stage-button:hover .tooltiptext,
+.nose-button:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+    /* No dimension changes on hover - only visibility/opacity */
+}
+
+/* Special positioning for nose tooltip */
+.nose-button .tooltiptext {
+    width: 120px;     /* Wider than 20px to fit text */
+    left: 50%;        /* Center horizontally */
+    bottom: 110%;     /* Position above the nose */
+    top: auto;        /* Override the top: 50% from general tooltip */
+    transform: translateX(-50%); /* Center precisely */
+    white-space: normal;
+}

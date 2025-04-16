@@ -11,7 +11,7 @@
   <div id="planet-foreground" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
           </div>
   {% block extra_js %}
-<script src="{% static 'js/mars.js' %}"></script>
+<script src="{% static 'js/mars.js' %}"></script>a
 
 {% endblock %}
 
@@ -70,11 +70,13 @@
                 <!-- Satellite -->
                 <div class="satellite">🛰</div>
             </div>
+            <span class="tooltiptext">Analyse de données agricoles et satellites</span>
         </a>
         <a href="/graph" class="stage-button stage2 gray-2">
             <div class="icons">
                 <div class="runner">🏃</div>
             </div>
+            <span class="tooltiptext">Statistiques et visualisations sportives</span>
         </a>
         <a href="/bubble_sort" class="stage-button stage3 gray-3">
             <div class="icons">
@@ -85,10 +87,13 @@
                     <div class="bubble yellow"></div>
                 </div>
             </div>
+            <span class="tooltiptext">Organisation dynamique par bulles</span>
         </a>
     </div>
 
-        <a href="/polls" class="nose-button nose"></a>
+        <a href="/polls" class="nose-button nose">
+            <span class="tooltiptext">Sondages et feedback utilisateurs</span>
+        </a>
 
 
 

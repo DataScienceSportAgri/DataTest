@@ -1,5 +1,5 @@
 from datetime import time
-from .utils.plot_utils import generate_figure, get_base_data, get_more_data, generate_score_plot, evolution_types_courses
+from .utils.plot_utils import generate_figure, get_base_data, get_more_data, generate_score_plot, evolution_types_courses, evolution_vitesse_par_categorie, evolution_vitesse_par_categorie_data
 from django.core.serializers import serialize
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -1029,6 +1029,7 @@ class ScoreDistributionView(TemplateView):
         df, initial_ids = get_base_data()
         fig = generate_figure(df, 'vitesse')
         self.request.session['displayed_ids'] = initial_ids
+        self.request.session['score_type'] = 'vitesse'
         context['graph1'] = fig
         return context
 
@@ -1037,8 +1038,9 @@ class ScoreDistributionView(TemplateView):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             if request.GET.get('action') == 'submit':
                 print('submit')
-                response_data = self.handle_submit(request)
-                return response_data  # Retourne directement le contexte
+                self.request.session['score_type'] = request.GET.get('score_type', 'vitesse')
+                context = self.handle_submit(request)
+                return context  # Retourne directement le contexte
             else:
                 return self.get_updated_data(request)
         print("N'est pas une requête ajax")
@@ -1051,21 +1053,17 @@ class ScoreDistributionView(TemplateView):
         score_type = request.GET.get('score_type', 'vitesse')
         print('score_type', score_type)
         if graph == 'graph1':
-            context = self.get_graph1_data(score_type)
+            plot_data = self.get_graph1_data(score_type)
         else:
-            context = self.get_graph2_data(score_type)
+            plot_data= self.get_graph2_data(score_type)
 
-        html = render_to_string('graph/_score_distribution_partial.html', context, request=request)
-
-        response_data = {
-            'html': html
-        }
-
-        return JsonResponse(response_data)
+        return JsonResponse({
+            'response_data':plot_data
+        })
 
     def get_updated_data(self, request):
         """Récupère de nouvelles données et met à jour le graphique"""
-        score_type = request.GET.get('score_type', 'vitesse')
+        score_type = self.request.session['score_type']
 
         # Récupérer de nouvelles données (sans dupliquer les IDs déjà affichés)
         df_full = get_more_data(request)
@@ -1079,15 +1077,13 @@ class ScoreDistributionView(TemplateView):
         })
 
     def get_graph1_data(self, score_type, **kwargs):
-        template_name = 'graph/_score_distribution_partial.html'
-        context = super().get_context_data(**kwargs)
         """Générer le graphique 1 en fonction du type de score"""
         df, initial_ids = get_base_data()
-        fig = generate_figure(df, score_type)
+        plot_data = generate_score_plot(df, score_type)
 
         self.request.session['displayed_ids'] = initial_ids
-        context['graph1'] = fig
-        return context
+
+        return plot_data
 
     def get_graph2_data(self, score_type):
         """Générer un autre graphique (si nécessaire)"""
@@ -1098,6 +1094,26 @@ class StatGlobalView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Graphique 1: Évolution des types de courses
         fig = evolution_types_courses()
         context['plot_html'] = fig
+        categories = CategorieSimplifiee.objects.all().order_by('nom')
+        context['categories'] = categories
+
+        # Récupérer la catégorie sélectionnée ou mettre 7 par défaut
+        selected_categorie_id = self.request.GET.get('categorie') or '7'
+        context['selected_categorie'] = int(selected_categorie_id)
+
+        # Générer le graphique pour la catégorie sélectionnée
+        if selected_categorie_id:
+            vitesse_fig = evolution_vitesse_par_categorie(selected_categorie_id)
+            context['vitesse_plot_html'] = vitesse_fig
+
         return context
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('ajax') == 'true':
+            selected_categorie_id = request.GET.get('categorie') or '7'
+            vitesse_fig = evolution_vitesse_par_categorie_data(selected_categorie_id)
+            return JsonResponse({'vitesse_plot_html': vitesse_fig})
+        return super().get(request, *args, **kwargs)

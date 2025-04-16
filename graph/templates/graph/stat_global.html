@@ -13,4 +13,30 @@
             max-width: 1000px;
         }
     </style>
+<h2>Evolution de la vitesse moyenne du 10 km et semi-marathon pour la catégorie choisie</h2>
+<!-- Sélection de catégorie (sans formulaire complet) -->
+<div class="form-container">
+    <div class="form-group">
+        <label for="categorie">Sélectionner une catégorie:</label>
+        <select name="categorie" id="categorie" class="form-control">
+            <option value="">-- Choisir une catégorie --</option>
+            {% for categorie in categories %}
+                <option value="{{ categorie.id }}" {% if selected_categorie == categorie.id %}selected{% endif %}>
+                    {{ categorie.nom }}  âge : {{ categorie.age_min }} à {{ categorie.age_max }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Indicateur de chargement -->
+<div id="loading-indicator" style="display: none;">
+    Chargement en cours...
+</div>
+
+<!-- Conteneur pour le graphique de vitesse -->
+<div class="js-plotly-plot" id="vitesse-global">
+    {{ vitesse_plot_html|safe }}
+</div>
+    <script src="{% static 'js/statGlobal.js' %}"></script>
 {% endblock %}

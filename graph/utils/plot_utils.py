@@ -1,11 +1,18 @@
 import pandas as pd
 import plotly.express as px
-from graph.models import ResultatCourse, Course, CourseType
+from graph.models import ResultatCourse, Course, CourseType, Categorie, CategorieSimplifiee
 import numpy as np
 from django.db.models import Count
 import plotly.graph_objects as go
 # Calcul de la régression linéaire et R²
 from scipy import stats
+import math
+
+def clean_nan_values(values):
+    """Remplace les valeurs NaN par None dans une liste."""
+    if values is None:
+        return None
+    return [None if (isinstance(x, float) and (np.isnan(x) or math.isnan(x))) else x for x in values]
 
 def generate_figure(df, score_type):
 
@@ -239,3 +246,297 @@ def evolution_types_courses():
     plot_html = fig.to_html(full_html=False)
 
     return plot_html
+
+
+def evolution_vitesse_par_categorie(categorie_simplifiee_id):
+    """
+    Génère un graphique d'évolution de la vitesse moyenne pour 10km et semi-marathon
+    pour une catégorie simplifiée donnée, avec affichage des écarts-types.
+    """
+    # Structure correcte des distances
+    distance_map = {
+        '10km': [10000],
+        'Semi-marathon': [21097, 21100]
+    }
+
+    # Applatir la liste pour la requête Django
+    distances_list = []
+    for dist_values in distance_map.values():
+        distances_list.extend(dist_values)
+
+    # Années à considérer
+    annees = list(range(2014, 2025))
+
+    # Récupérer les catégories liées à la catégorie simplifiée
+    categories_ids = Categorie.objects.filter(
+        categoriesimplifiee_id=categorie_simplifiee_id
+    ).values_list('id', flat=True)
+
+    # Récupérer les résultats de course pertinents
+    resultats_qs = ResultatCourse.objects.filter(
+        course__type_id__nom__in=['Course sur route', 'Foulée'],
+        course__distance__in=distances_list,
+        course__annee__in=annees,
+        categorie_id__in=categories_ids
+    ).select_related('course')
+
+    # Convertir en DataFrame
+    data = []
+    for resultat in resultats_qs:
+        temps_total = resultat.temps or resultat.temps2
+        if temps_total:
+            secondes = temps_total.total_seconds()
+            distance = resultat.course.distance
+            annee = resultat.course.annee
+
+            # Calculer la vitesse en km/h
+            if secondes > 0:
+                vitesse = (distance / 1000) / (secondes / 3600)
+                # Filtrer les vitesses aberrantes
+                if 6 <= vitesse <= 25:
+                    data.append({
+                        'annee': annee,
+                        'distance': distance,
+                        'vitesse': vitesse
+                    })
+
+    # Créer le DataFrame
+    df = pd.DataFrame(data)
+
+    # Si le DataFrame est vide, renvoyer un graphique vide
+    if df.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            title='Aucune donnée disponible pour cette catégorie',
+            xaxis=dict(title='Année'),
+            yaxis=dict(title='Vitesse moyenne (km/h)')
+        )
+        return fig.to_html(full_html=False)
+
+    # Définir les couleurs pour les différentes distances
+    colors = {
+        '10km': 'rgb(31, 119, 180)',
+        'Semi-marathon': 'rgb(255, 127, 14)'
+    }
+
+    # Créer le graphique
+    fig = go.Figure()
+
+    # Pour chaque type de distance, calculer la moyenne et les écarts-types par année
+    for distance_name, distance_values in distance_map.items():
+        # Filtrer le DataFrame pour les distances correspondantes
+        df_dist = df[df['distance'].isin(distance_values)]
+
+        if not df_dist.empty:
+            color = colors[distance_name]
+            # Calculer les statistiques par année
+            stats = []
+            for annee in annees:
+                df_annee = df_dist[df_dist['annee'] == annee]
+                if not df_annee.empty:
+                    moyenne = df_annee['vitesse'].mean()
+
+                    # Calcul de l'écart supérieur (moyenne des écarts positifs)
+                    df_haut = df_annee[df_annee['vitesse'] > moyenne]
+                    ecart_haut = (df_haut['vitesse'] - moyenne).mean() if not df_haut.empty else 0
+
+                    # Calcul de l'écart inférieur (moyenne des écarts négatifs)
+                    df_bas = df_annee[df_annee['vitesse'] < moyenne]
+                    ecart_bas = (moyenne - df_bas['vitesse']).mean() if not df_bas.empty else 0
+
+                    stats.append({
+                        'annee': annee,
+                        'moyenne': moyenne,
+                        'ecart_haut': moyenne + ecart_haut,
+                        'ecart_bas': moyenne - ecart_bas
+                    })
+                else:
+                    stats.append({
+                        'annee': annee,
+                        'moyenne': None,
+                        'ecart_haut': None,
+                        'ecart_bas': None
+                    })
+
+            # Convertir en DataFrame pour faciliter le tracé
+            df_stats = pd.DataFrame(stats)
+
+            # Tracer la ligne de moyenne
+            fig.add_trace(go.Scatter(
+                x=df_stats['annee'],
+                y=df_stats['moyenne'],
+                mode='lines+markers',
+                name=distance_name,
+                line=dict(color=color, width=2)
+            ))
+
+            # Ajouter la zone d'écart-type (zone colorée entre les écarts)
+            fig.add_trace(go.Scatter(
+                x=df_stats['annee'].tolist() + df_stats['annee'].tolist()[::-1],
+                y=df_stats['ecart_haut'].tolist() + df_stats['ecart_bas'].tolist()[::-1],
+                fill='toself',
+                fillcolor=color.replace('rgb', 'rgba').replace(')', ', 0.2)'),
+                line=dict(color='rgba(255,255,255,0)'),
+                showlegend=False,
+                name=f'{distance_name} (écart-type)'
+            ))
+
+    # Configurer le layout du graphique
+    categorie_nom = CategorieSimplifiee.objects.get(id=categorie_simplifiee_id).nom
+
+    fig.update_layout(
+        title=f'Évolution de la vitesse moyenne par distance pour {categorie_nom} (2014-2024)',
+        xaxis=dict(title='Année', tickmode='linear'),
+        yaxis=dict(title='Vitesse moyenne (km/h)', range=[6, 20]),
+        legend=dict(title='Distance'),
+        hovermode='x unified'
+    )
+
+    # Renvoyer le HTML du graphique
+    return fig.to_html(full_html=False)
+
+
+def evolution_vitesse_par_categorie_data(categorie_simplifiee_id):
+    """
+    Génère les données d'évolution des vitesses moyennes au format JSON
+    compatible avec Plotly.react pour du rendu côté client.
+    """
+    # Structure des distances
+    distance_map = {
+        '10km': [10000],
+        'Semi-marathon': [21097, 21100]
+    }
+
+    # Aplatir la liste pour la requête Django
+    distances_list = []
+    for dist_values in distance_map.values():
+        distances_list.extend(dist_values)
+
+    # Années à considérer
+    annees = list(range(2014, 2025))
+
+    # Récupérer les catégories liées
+    categories_ids = Categorie.objects.filter(
+        categoriesimplifiee_id=categorie_simplifiee_id
+    ).values_list('id', flat=True)
+
+    # Récupérer les résultats de course pertinents
+    resultats_qs = ResultatCourse.objects.filter(
+        course__type_id__nom__in=['Course sur route', 'Foulée'],
+        course__distance__in=distances_list,
+        course__annee__in=annees,
+        categorie_id__in=categories_ids
+    ).select_related('course')
+
+    # Convertir en DataFrame
+    data = []
+    for resultat in resultats_qs:
+        temps_total = resultat.temps or resultat.temps2
+        if temps_total:
+            secondes = temps_total.total_seconds()
+            distance = resultat.course.distance
+            annee = resultat.course.annee
+
+            # Calculer la vitesse en km/h
+            if secondes > 0:
+                vitesse = (distance / 1000) / (secondes / 3600)
+                if 6 <= vitesse <= 25:
+                    data.append({
+                        'annee': annee,
+                        'distance': distance,
+                        'vitesse': vitesse
+                    })
+
+    # Créer le DataFrame
+    df = pd.DataFrame(data)
+
+    # Préparer la structure des données Plotly
+    traces = []
+
+    # Informations pour le layout
+    categorie_nom = CategorieSimplifiee.objects.get(id=categorie_simplifiee_id).nom
+    layout = {
+        'title': f'Évolution de la vitesse moyenne par distance pour {categorie_nom} (2014-2024)',
+        'xaxis': {'title': 'Année', 'tickmode': 'linear'},
+        'yaxis': {'title': 'Vitesse moyenne (km/h)', 'range': [6, 20]},
+        'legend': {'title': 'Distance'},
+        'hovermode': 'x unified'
+    }
+
+    # Si le DataFrame est vide, renvoyer un objet vide
+    if df.empty:
+        return {'data': [], 'layout': layout}
+
+    # Définir les couleurs pour les différentes distances
+    colors = {
+        '10km': 'rgb(31, 119, 180)',
+        'Semi-marathon': 'rgb(255, 127, 14)'
+    }
+
+    # Pour chaque type de distance, calculer les statistiques
+    for distance_name, distance_values in distance_map.items():
+        # Filtrer le DataFrame pour les distances correspondantes
+        df_dist = df[df['distance'].isin(distance_values)]
+
+        if not df_dist.empty:
+            color = colors[distance_name]
+
+            # Calculer les statistiques par année
+            stats = []
+            for annee in annees:
+                df_annee = df_dist[df_dist['annee'] == annee]
+                if not df_annee.empty:
+                    moyenne = df_annee['vitesse'].mean()
+
+                    # Calcul des écarts
+                    df_haut = df_annee[df_annee['vitesse'] > moyenne]
+                    ecart_haut = (df_haut['vitesse'] - moyenne).mean() if not df_haut.empty else 0
+
+                    df_bas = df_annee[df_annee['vitesse'] < moyenne]
+                    ecart_bas = (moyenne - df_bas['vitesse']).mean() if not df_bas.empty else 0
+
+                    stats.append({
+                        'annee': annee,
+                        'moyenne': moyenne,
+                        'ecart_haut': moyenne + ecart_haut,
+                        'ecart_bas': moyenne - ecart_bas
+                    })
+                else:
+                    stats.append({
+                        'annee': annee,
+                        'moyenne': None,
+                        'ecart_haut': None,
+                        'ecart_bas': None
+                    })
+
+            # Convertir en DataFrame
+            df_stats = pd.DataFrame(stats)
+
+            # Ligne de moyenne
+            traces.append({
+                'type': 'scatter',
+                'x': clean_nan_values(df_stats['annee'].tolist()),
+                'y': clean_nan_values(df_stats['moyenne'].tolist()),
+                'mode': 'lines+markers',
+                'name': distance_name,
+                'line': {'color': color, 'width': 2}
+            })
+
+            # Zone d'écart-type
+            traces.append({
+                'type': 'scatter',
+                'x': clean_nan_values(df_stats['annee'].tolist() + df_stats['annee'].tolist()[::-1]),
+                'y': clean_nan_values(df_stats['ecart_haut'].tolist() + df_stats['ecart_bas'].tolist()[::-1]),
+                'fill': 'toself',
+                'fillcolor': color.replace('rgb', 'rgba').replace(')', ', 0.2)'),
+                'line': {'color': 'rgba(255,255,255,0)'},
+                'showlegend': False,
+                'name': f'{distance_name} (écart-type)'
+            })
+
+    # Retourner les données au format compatible avec Plotly.react
+    return {
+        'data': traces,
+        'layout': layout
+    }
+
