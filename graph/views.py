@@ -29,7 +29,7 @@ import ast
 import re
 from plotly.offline import plot
 import plotly.express as px
-
+from graph.utils.final_plot import *
 
 class CourseList(generic.ListView):
     template_name = 'graph/index.html'
@@ -1028,9 +1028,11 @@ class ScoreDistributionView(TemplateView):
         context = super().get_context_data(**kwargs)
         df, initial_ids = get_base_data()
         fig = generate_figure(df, 'vitesse')
+        data = hub_processing(coureur_type='viables', distribution_type='quartiles', score_type='vitesse')
         self.request.session['displayed_ids'] = initial_ids
         self.request.session['score_type'] = 'vitesse'
         context['graph1'] = fig
+        context['graph_data'] = data
         return context
 
     def get(self, request, *args, **kwargs):
@@ -1087,6 +1089,7 @@ class ScoreDistributionView(TemplateView):
 
     def get_graph2_data(self, score_type):
         """Générer un autre graphique (si nécessaire)"""
+
         return {'graph': '<p>Graph 2 placeholder (à remplir)</p>'}
 
 class StatGlobalView(TemplateView):

@@ -3,13 +3,16 @@
 {% load static %}
 
 {% block content %}
-    <script src="{% static 'js/ScoreDistribution.js' %}"></script>
+    <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 
+    </head>
+    <script src="{% static 'js/ScoreDistribution.js' %}"></script>
+    <script src="{% static 'js/D3.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <h2>Distribution et évolution des scores</h2>
 
-    <div class="graph-wrapper">
-        <!-- Colonne de gauche -->
-        <div class="graph-left">
+
             <h3>Evolution des scores de tous les coureurs</h3>
 
             <div class="controls">
@@ -24,10 +27,9 @@
             </div>
 
 <div class="js-plotly-plot" id="graph-1-container">     {{ graph1|safe }} </div>
-        </div>
 
-        <!-- Colonne de droite -->
-        <div class="graph-right">
+
+
             <h3>Evolution de la performance par % arrivée catégorie</h3>
 
             <div class="controls">
@@ -55,12 +57,11 @@
                     </div>
                 </form>
             </div>
-
+                {{ graph_data.series_formatees|json_script:"series-data" }}
             <div class="graph-container">
-                rien
+
             </div>
-        </div>
-    </div>
+
 
     <!-- Scripts -->
     <script src="{% static 'plotly.js-dist/plotly.js' %}"></script>

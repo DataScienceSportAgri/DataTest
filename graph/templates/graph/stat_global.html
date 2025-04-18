@@ -2,6 +2,10 @@
 {% load static %}
 
 {% block content %}
+            <!-- Colonne de gauche -->
+   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <div class="graph-wrapper">
+        <div class="graph-left">
     <h2>Évolution des types de courses par année</h2>
     <div class="chart-container">
         {{ plot_html|safe }}
@@ -9,10 +13,12 @@
     
     <style>
         .chart-container {
-            margin: 20px 0;
-            max-width: 1000px;
+            max-width: 300px;
         }
     </style>
+        </div>
+            <!-- Colonne de droite -->
+        <div class="graph-right">
 <h2>Evolution de la vitesse moyenne du 10 km et semi-marathon pour la catégorie choisie</h2>
 <!-- Sélection de catégorie (sans formulaire complet) -->
 <div class="form-container">
@@ -39,4 +45,6 @@
     {{ vitesse_plot_html|safe }}
 </div>
     <script src="{% static 'js/statGlobal.js' %}"></script>
+        </div>
+    </div>
 {% endblock %}
