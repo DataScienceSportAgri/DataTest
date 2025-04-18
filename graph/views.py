@@ -30,6 +30,16 @@ import re
 from plotly.offline import plot
 import plotly.express as px
 from graph.utils.final_plot import *
+from decimal import Decimal
+from datetime import date
+
+# Sérialisation personnalisée
+def custom_serializer(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, (date, np.datetime64)):
+        return str(obj)
+    raise TypeError(f"Type {type(obj)} non géré")
 
 class CourseList(generic.ListView):
     template_name = 'graph/index.html'
@@ -1028,7 +1038,7 @@ class ScoreDistributionView(TemplateView):
         context = super().get_context_data(**kwargs)
         df, initial_ids = get_base_data()
         fig = generate_figure(df, 'vitesse')
-        data = hub_processing(coureur_type='viables', distribution_type='quartiles', score_type='vitesse')
+        data = hub_processing(coureur_type='tous', distribution_type='quartiles', score_type='global')
         self.request.session['displayed_ids'] = initial_ids
         self.request.session['score_type'] = 'vitesse'
         context['graph1'] = fig
@@ -1053,11 +1063,15 @@ class ScoreDistributionView(TemplateView):
         """Gestion des changements dus au formulaire"""
         graph = request.GET.get('graph')
         score_type = request.GET.get('score_type', 'vitesse')
+        score_type2 = request.GET.get('scoreType', 'vitesse')
+        perftier = request.GET.get('performanceTier', 'quartiles')
+        typecour = request.GET.get('cohortType', 'tous')
         print('score_type', score_type)
         if graph == 'graph1':
             plot_data = self.get_graph1_data(score_type)
         else:
-            plot_data= self.get_graph2_data(score_type)
+            raw_data = self.get_graph2_data(score_type2, perftier, typecour)
+            plot_data = json.loads(json.dumps(raw_data, default=custom_serializer))
 
         return JsonResponse({
             'response_data':plot_data
@@ -1087,10 +1101,10 @@ class ScoreDistributionView(TemplateView):
 
         return plot_data
 
-    def get_graph2_data(self, score_type):
+    def get_graph2_data(self, score_type, perf_tier, coureur_type):
         """Générer un autre graphique (si nécessaire)"""
-
-        return {'graph': '<p>Graph 2 placeholder (à remplir)</p>'}
+        data = hub_processing(coureur_type=coureur_type, distribution_type=perf_tier, score_type=score_type)
+        return data['series_formatees']
 
 class StatGlobalView(TemplateView):
     template_name = 'graph/stat_global.html'

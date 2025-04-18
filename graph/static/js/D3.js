@@ -48,8 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const seriesData = JSON.parse(dataElement.textContent);
 
-    const margin = {top: 40, right: 30, bottom: 40, left: 60};
-    const width = 1200 - margin.left - margin.right;
+    const margin = {top: 40, right: 30, bottom: 40, left: 100};
+    const width = 1250 - margin.left - margin.right;
     const height = 700 - margin.top - margin.bottom;
 
     // Création du conteneur SVG
@@ -77,8 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const dataType = data[0].type || "individual";
 
     // Déclarer les variables d'échelle au niveau de la fonction
-    let xScale, yScale, allDates, allScores;
-
+    let xScale, yScale, allDates, allScores, score;
         if (dataType === "individual") {
             // Filtrer les données individuelles AVANT de calculer les dates/scores
             const individualData = data.filter(d => d.type === "individual");
@@ -178,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Dessiner chaque tendance
         trends.forEach((trend, i) => {
+            score = trend.score
             // Vérifier les propriétés essentielles
             if (trend.slope === undefined || trend.intercept === undefined) {
                 console.error(`Missing slope/intercept for trend ${i}:`, trend);
@@ -296,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Affichage des tendances et équations
             trendSeries.forEach(trend => {
+                score = trend.score
                 // Ligne de tendance
                 mainGroup.append("line")
                     .attr("x1", xScale(trend.min_year))
@@ -309,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Équation de la droite affichée
                 mainGroup.append("text")
-                    .attr("x", xScale((trend.min_year + trend.max_year) / 2))
+                    .attr("x", width - 10)
                     .attr("y", yScale(trend.slope * ((trend.min_year + trend.max_year) / 2) + trend.intercept) - 15)
                     .attr("text-anchor", "middle")
                     .attr("fill", trend.color)
@@ -369,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .attr("transform", `rotate(-90)`)
             .attr("x", -height / 2)
             .attr("y", -45)
-            .text("Score de performance");
+            .text(`Score de performance ${score}`);
     }
 
     // Fonction zoom/pan
@@ -380,7 +381,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
     svg.call(zoom);
+    function fetchAndUpdateGraph() {
+        // Récupère les valeurs sélectionnées
+        const scoreType = document.querySelector('input[name="scoreType"]:checked').value;
+        const performanceTier = document.querySelector('input[name="performanceTier"]:checked').value;
+        const cohortType = document.querySelector('input[name="cohortType"]:checked').value;
+        const action = 'submit'
+        const graph = 'graph2'
 
+        // Fait une requête AJAX GET vers la vue Django avec les paramètres
+        fetch(`/graph/score-distribution/?scoreType=${scoreType}&performanceTier=${performanceTier}&cohortType=${cohortType}&action=${action}&graph=${graph}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(newData => {
+            // Nettoie le graphique avant de le redessiner
+            mainGroup.selectAll("*").remove();
+            drawGraph(newData.response_data || newData); // selon la structure du JSON retourné
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour du graphique:', error);
+        });
+    }
+
+    // Ajoute l'écouteur à tous les boutons radio du formulaire
+    document.querySelectorAll('#scoreFormRight input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', fetchAndUpdateGraph);
+    });
     // Initialiser le graphique
     drawGraph(seriesData);
 });

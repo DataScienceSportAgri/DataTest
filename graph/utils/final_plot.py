@@ -7,7 +7,12 @@ import json
 from scipy import stats
 import re
 import statsmodels.api as sm
+import numpy as np
+from sklearn.linear_model import LinearRegression, TheilSenRegressor
 import statsmodels.formula.api as smf
+
+
+
 
 
 def get_coureurs_by_count(df, group_col='groupe', n=30):
@@ -63,6 +68,55 @@ def filter_and_aggregate_time_series(df):
     return df_agg
 
 
+def filter_extreme_trend_runners(df_group, percentile_cut=10):
+    """
+    Filtre les coureurs ayant les pentes les plus extrêmes.
+
+    Parameters:
+    -----------
+    df_group : DataFrame
+        Données des coureurs avec 'coureur_id', 'annee', 'score'
+    percentile_cut : int
+        Pourcentage des coureurs avec pentes extrêmes à éliminer (de chaque côté)
+
+    Returns:
+    --------
+    DataFrame
+        Données filtrées sans les coureurs aux pentes extrêmes
+    """
+    # Calculer la pente pour chaque coureur
+    slopes = []
+    for coureur_id, c_df in df_group.groupby('coureur_id'):
+        if len(c_df) < 3:  # Besoin d'au moins 3 points pour une pente fiable
+            continue
+
+        c_df = c_df.sort_values('annee')
+        X = c_df[['annee']].values
+        y = c_df['score'].values
+
+        try:
+            # Utiliser TheilSenRegressor pour une estimation robuste de la pente
+            model = TheilSenRegressor().fit(X, y)
+            slopes.append((coureur_id, model.coef_[0]))
+        except:
+            # En cas d'erreur, conserver le coureur
+            continue
+
+    # Trier les coureurs par pente
+    slopes.sort(key=lambda x: x[1])
+
+    # Calculer les indices des coureurs à conserver
+    n = len(slopes)
+    lower_cut = int(n * percentile_cut / 100)
+    upper_cut = n - lower_cut
+
+    # Extraire les IDs des coureurs à conserver (exclure les extrêmes)
+    keep_ids = [s[0] for s in slopes[lower_cut:upper_cut]]
+
+    # Filtrer le DataFrame
+    return df_group[df_group['coureur_id'].isin(keep_ids)]
+
+
 # Nouvelle fonction utilitaire pour générer les labels safe
 def generate_safe_label(raw_label):
     # Remplacer tous les caractères non alphanumériques par des underscores
@@ -108,7 +162,9 @@ def get_color_for_group(groupe):
 def get_filtered_coureurs(coureur_type='viables'):
     """Filtre les coureurs selon le type demandé"""
     if coureur_type == 'viables':
-        return Coureur.objects.filter(score_de_viabilite__gt=0.3)
+        coureur_unique = Coureur.objects.filter(score_de_viabilite__gt=0.3)
+        print('len de coureur unique',len(coureur_unique))
+        return coureur_unique
     elif coureur_type == 'tous':
         random_coureurs = Coureur.objects.order_by('?')[:10000]
         return random_coureurs
@@ -117,31 +173,59 @@ def get_filtered_coureurs(coureur_type='viables'):
 
 def calculate_percentile_groups(scores, distribution_type='quartiles'):
     """
-    Retourne :
-    - Une Series pandas avec des labels CSS-safe
-    - Un dictionnaire de mapping {label_safe: label_affichage}
+    Retourne un tuple contenant :
+    - Series pandas avec les groupes (labels CSS-safe)
+    - Dictionnaire de correspondance {label_safe: label_affichage}
     """
-    if distribution_type == 'quartiles':
-        bins = np.quantile(scores, [0, 0.25, 0.5, 0.75, 1.0])
-        labels_affichage = ['0-25%', '25-50%', '50-75%', '75-100%']
-        labels_safe = ['q1', 'q2', 'q3', 'q4']  # Noms sans caractères spéciaux
-    elif distribution_type == 'deciles':
-        bins = np.quantile(scores, np.linspace(0, 1, 11))
-        labels_affichage = [f'{i * 10}-{(i + 1) * 10}%' for i in range(10)]
-        labels_safe = [f'd{i + 1}' for i in range(10)]
-    elif distribution_type == 'ventiles':
-        bins = np.quantile(scores, np.linspace(0, 1, 21))
-        labels_affichage = [f'{i * 5}-{(i + 1) * 5}%' for i in range(20)]
-        labels_safe = [f'v{i + 1}' for i in range(20)]
-    else:
-        raise ValueError("Type de distribution invalide")
+    scores = pd.Series(scores)
 
-    groupes = pd.cut(scores, bins=bins, labels=labels_safe, include_lowest=True)
-    label_map = dict(zip(labels_safe, labels_affichage))
-    groupes.label_map = label_map  # Stockage du mapping
+    # Configuration des découpages
+    if distribution_type == 'quartiles':
+        quantiles = [0, 0.25, 0.5, 0.75, 1.0]
+        labels_affichage = ['0-25%', '25-50%', '50-75%', '75-100%']
+        labels_safe = ['q1', 'q2', 'q3', 'q4']
+
+    elif distribution_type == 'top35':
+        quantiles = np.linspace(0.65, 1.0, 8)  # 7 tranches de 5% dans le top 35%
+        labels_affichage = [f'{int(65 + i * 5)}-{70 + i * 5}%' for i in range(7)]
+        labels_safe = [f'top35_{i + 1}' for i in range(7)]
+
+    elif distribution_type == 'bottom80':
+        quantiles = np.linspace(0.0, 0.8, 9)  # 8 tranches de 10% dans le bottom 80%
+        labels_affichage = [f'{i * 10}-{(i + 1) * 10}%' for i in range(8)]
+        labels_safe = [f'bot80_{i + 1}' for i in range(8)]
+
+    else:
+        raise ValueError(f"Type de distribution non supporté : {distribution_type}")
+
+    # Gestion des cas extrêmes (toutes valeurs identiques)
+    if scores.nunique() == 1:
+        groupes = pd.Series(labels_safe[0], index=scores.index)
+        label_map = {labels_safe[0]: labels_affichage[0]}
+        return groupes, label_map
+
+    # Découpage avec gestion automatique des doublons
+    try:
+        groupes = pd.qcut(
+            scores,
+            q=quantiles,
+            labels=labels_safe,
+            duplicates='drop'  # Fusionne les intervalles identiques
+        )
+
+        # Création du mapping des labels
+        unique_groups = groupes.cat.categories
+        label_map = {
+            group: labels_affichage[i]
+            for i, group in enumerate(unique_groups)
+        }
+
+    except Exception as e:
+        print(f"Erreur lors du découpage : {e}")
+        groupes = pd.Series(['erreur'] * len(scores), index=scores.index)
+        label_map = {'erreur': 'Erreur de découpage'}
 
     return groupes
-
 
 
 def hub_processing(coureur_type='viables', distribution_type='quartiles', score_type='global'):
@@ -178,6 +262,7 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
         df_agg = df.groupby('coureur_id', as_index=False)['score'].mean()
         df_agg['groupe'] = calculate_percentile_groups(df_agg['score'], distribution_type)
         df = df.merge(df_agg[['coureur_id', 'groupe']], on='coureur_id')
+        print('test df coureur',df)
     else:
         # Tous les points individuels
         df['groupe'] = calculate_percentile_groups(df['score'], distribution_type)
@@ -218,7 +303,6 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
         for groupe, group_df in df.groupby('groupe'):
             # 2. Filtrer et agréger les données du groupe
             group_df_processed = filter_and_aggregate_time_series(group_df)
-            print('group_df_processed', group_df_processed)
             # 2. Sélectionner les 30 coureurs avec le plus de points dans ce groupe
             top_coureurs_df = get_coureurs_by_count(group_df_processed, group_col='groupe', n=30)
             groupe_safe = generate_safe_label(group_df_processed)
@@ -254,6 +338,7 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
                     "intercept": float(data['avg_intercept']),
                     "group_variance": data['group_variance'],
                     "color": get_color_for_group(groupe),
+                    "score":score_type,
                     "type": "trend",
                     'groupe_safe': groupe_safe
                 })
@@ -301,6 +386,7 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
                     "intercept": float(intercept),
                     "color": get_color_for_group(groupe),
                     "type": "trend",
+                    "score": score_type,
                     'groupe_safe': groupe_safe  # <-- Ajout ici
                 })
             if len(x_values) > 2:  # Besoin d'au moins 3 points pour l'intervalle de confiance
@@ -329,6 +415,7 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
                     "residual_std": float(residual_std),
                     "color": get_color_for_group(groupe),
                     "type": "trend",
+                    "score": score_type,
                     'groupe_safe': groupe_safe  # <-- Ajout ici
                 })
             # Nouvelle fonction utilitaire pour générer les labels safe
@@ -408,80 +495,76 @@ def calculate_global_trends(series_par_groupe, coureur_type='viables'):
     return tendances
 
 
-def calculate_group_trends(df_group, max_iter=100):
-    """Version robuste du calcul de tendance qui évite les valeurs extrêmes"""
+def calculate_group_trends(df_group, max_iter=10000, percentile_cut=10):
+    """Version améliorée du calcul de tendance avec meilleure gestion des cas extrêmes"""
+    # Étape 0: Filtrer les coureurs avec tendances extrêmes
+    df_filtered = filter_extreme_trend_runners(df_group, percentile_cut=percentile_cut)
 
+    # Vérification post-filtrage
+    if len(df_filtered) < 5 or len(df_filtered['coureur_id'].unique()) < 2:
+        df_filtered = df_group.copy()
+        print("Utilisation des données originales après filtrage infructueux")
 
-    # Vérifier si suffisamment de données
-    if len(df_group) < 5 or len(df_group['coureur_id'].unique()) < 2:
-        print(f"Données insuffisantes: {len(df_group)} points")
-        # Utiliser une régression linéaire simple
-        from sklearn.linear_model import LinearRegression
-        model = LinearRegression()
-        X = df_group[['annee']].values
-        y = df_group['score'].values
-        model.fit(X, y)
-        return {
-            'avg_slope': float(model.coef_[0]),
-            'avg_intercept': float(model.intercept_ - model.coef_[0] * df_group['annee'].min()),
-            'group_variance': float(df_group.groupby('coureur_id')['score'].std().mean() ** 2)
-        }
+    # 1. Calcul des pentes individuelles pondérées
+    individual_slopes = []
+    weights = []
+    valid_coureurs = 0
 
+    for coureur_id, group in df_filtered.groupby('coureur_id'):
+        if len(group) < 2:
+            continue  # Pas assez de points pour calculer une pente
+
+        X = group[['annee']].values
+        y = group['score'].values
+
+        try:
+            model = LinearRegression().fit(X, y)
+            slope = model.coef_[0]
+            individual_slopes.append(slope)
+            weights.append(len(group))  # Poids = nombre de points
+            valid_coureurs += 1
+        except:
+            continue
+
+    # 2. Calcul de la pente moyenne pondérée
+    if valid_coureurs >= 3:  # Au moins 3 coureurs valides
+        avg_slope = np.average(individual_slopes, weights=weights)
+        mean_year = df_filtered['annee'].mean()
+        mean_score = df_filtered['score'].mean()
+        avg_intercept = mean_score - avg_slope * mean_year
+    else:
+        avg_slope = None
+
+    # 3. Régression robuste sur l'ensemble des points
     try:
-        # 2. Standardiser les années pour la stabilité numérique
-        min_year = df_group['annee'].min()
-        df_group = df_group.copy()
-        df_group['year_norm'] = df_group['annee'] - min_year
+        robust_model = TheilSenRegressor(max_iter=max_iter).fit(df_filtered[['annee']], df_filtered['score'])
+        robust_slope = robust_model.coef_[0]
+        robust_intercept = robust_model.intercept_
+    except:
+        robust_slope = 0.0
+        robust_intercept = df_filtered['score'].mean()
 
-        # 3. Détecter et traiter l'autocorrélation
-        # Calculer une médiane par année pour réduire l'influence des valeurs extrêmes
-        yearly_medians = df_group.groupby('annee')['score'].median().reset_index()
+    # 4. Combinaison des deux méthodes (50/50)
+    if avg_slope is not None and not np.isnan(avg_slope):
+        final_slope = 0.5 * avg_slope + 0.5 * robust_slope
+        final_intercept = 0.5 * avg_intercept + 0.5 * robust_intercept
+        method_used = "combined_individual_and_robust"
+    else:
+        final_slope = robust_slope
+        final_intercept = robust_intercept
+        method_used = "robust_fallback"
 
-        # Régression simple sur les médianes annuelles
-        X = sm.add_constant(yearly_medians['annee'])
-        model_ols = sm.OLS(yearly_medians['score'], X).fit()
+    # 5. Calcul de la variance résiduelle
+    residuals = df_filtered['score'] - (final_slope * df_filtered['annee'] + final_intercept)
+    group_variance = np.var(residuals)
 
-        # Obtenir pente et intercept des médianes
-        slope = model_ols.params['annee']
-        intercept = model_ols.params['const'] - slope * min_year
-
-        # 4. Vérifier la plausibilité des résultats
-        # Intervalle typique des scores observés
-        expected_range = [df_group['score'].min(), df_group['score'].max()]
-
-        # Valeurs prédites aux années min et max
-        y_min = slope * df_group['annee'].min() + intercept
-        y_max = slope * df_group['annee'].max() + intercept
-
-        # Si les prédictions sont en dehors de la plage ±50% des données,
-        # c'est probablement incorrect, utiliser une pente très faible
-        if (y_min < expected_range[0] * 0.5 or y_min > expected_range[1] * 1.5 or
-                y_max < expected_range[0] * 0.5 or y_max > expected_range[1] * 1.5):
-            print(f"Valeurs prédites implausibles: y_min={y_min}, y_max={y_max}, ajustement nécessaire")
-            # Utiliser une tendance quasi-plate basée sur la moyenne des scores
-            slope = 0.01  # Pente très faible
-            intercept = df_group['score'].mean() - slope * (df_group['annee'].min() + df_group['annee'].max()) / 2
-
-        # 5. Calculer la variance comme mesure de l'intervalle de confiance
-        residuals = df_group['score'] - (slope * df_group['annee'] + intercept)
-        group_variance = np.var(residuals)
-
-        return {
-            'avg_slope': float(slope),
-            'avg_intercept': float(intercept),
-            'group_variance': float(group_variance),
-            'is_fallback': y_min < expected_range[0] * 0.5 or y_min > expected_range[1] * 1.5
-        }
-
-    except Exception as e:
-        print(f"Erreur lors du calcul de tendance: {e}")
-        # Solution de repli: tendance plate à la moyenne
-        return {
-            'avg_slope': 0.01,
-            'avg_intercept': float(df_group['score'].mean()) - 0.01 * df_group['annee'].mean(),
-            'group_variance': float(df_group.groupby('coureur_id')['score'].std().mean() ** 2),
-            'is_fallback': True
-        }
+    return {
+        'avg_slope': float(final_slope),
+        'avg_intercept': float(final_intercept),
+        'group_variance': float(group_variance),
+        'method': method_used,
+        'individual_slopes_count': valid_coureurs
+    }
 
 
 def adjust_trend_to_fit_data(df, intercept, slope):

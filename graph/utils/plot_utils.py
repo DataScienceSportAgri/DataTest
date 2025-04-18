@@ -229,9 +229,10 @@ def evolution_types_courses():
         evolution_data[annee][type_name] = count
 
     # Création du graphique avec Plotly
-    fig = px.line(
+    fig  = px.line(
         title="Évolution des types de courses par année",
-        labels={'value': 'Nombre de courses', 'variable': 'Type de course'}
+        labels={'value': 'Nombre de courses', 'variable': 'Type de course'},
+        width=600  # Limite la largeur à 300 pixels
     )
 
     # Préparation des données pour Plotly
@@ -389,7 +390,8 @@ def evolution_vitesse_par_categorie(categorie_simplifiee_id):
         xaxis=dict(title='Année', tickmode='linear'),
         yaxis=dict(title='Vitesse moyenne (km/h)', range=[6, 20]),
         legend=dict(title='Distance'),
-        hovermode='x unified'
+        hovermode='x unified',
+        width=600
     )
 
     # Renvoyer le HTML du graphique
