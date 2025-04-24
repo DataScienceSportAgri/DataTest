@@ -362,25 +362,32 @@ td:first-child {
     gap: 25px; /* Espacement entre les deux divs */
 }
 
-.graph-left,
-.graph-right {
-    flex: 1; /* Les deux divs prennent la même largeur */
+.graph-left {
+    flex: 0 0 47.5%; /* 5% plus petit que 50% */
     padding: 15px;
-    border: 1px solid #ddd; /* Bordure légère pour distinction */
+    border: 1px solid #ddd;
     border-radius: 5px;
-    background-color: #f9f9f9; /* Couleur de fond légère */
+    background-color: #f9f9f9;
 }
 
+.graph-right {
+    flex: 0 0 52.5%; /* 5% plus grand que le gauche */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
 
 @media (max-width: 768px) {
     .graph-wrapper {
-        flex-direction: column; /* Les divs s'empilent verticalement */
-        gap: 15px; /* Réduction de l'espacement */
+        flex-direction: column;
+        gap: 15px;
     }
 
     .graph-left,
     .graph-right {
-        width: 100%; /* Chaque div prend toute la largeur */
+        width: 100%;
+        flex: none; /* Réinitialisation de flex sur petits écrans */
     }
 }
 .radio-group {

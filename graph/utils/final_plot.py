@@ -312,7 +312,7 @@ def hub_processing(coureur_type='viables', distribution_type='quartiles', score_
                 values = [
                     {"date": int(annee), "score": float(score), "coureur_id": coureur_id,
                      "prenom_marsien": prenom, "nom_marsien": nom}
-                    for annee, score, coureur_id, prenom, nom in zip(
+                    for annee, score, coureur_id, nom, prenom in zip(
                         coureur_df['annee'], coureur_df['score'],
                         coureur_df['coureur_id'], coureur_df['nom_marsien'], coureur_df['prenom_marsien'])
                 ]

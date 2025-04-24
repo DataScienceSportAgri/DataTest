@@ -235,6 +235,11 @@ def evolution_types_courses():
         width=600  # Limite la largeur à 300 pixels
     )
 
+    fig.update_layout(
+        xaxis=dict(title='Année'),
+        yaxis=dict(title="Nombre de courses enregistrées pour l'année"),
+    )
+
     # Préparation des données pour Plotly
     types = CourseType.objects.values_list('nom', flat=True).distinct()
     years = sorted(evolution_data.keys())
@@ -386,7 +391,7 @@ def evolution_vitesse_par_categorie(categorie_simplifiee_id):
     categorie_nom = CategorieSimplifiee.objects.get(id=categorie_simplifiee_id).nom
 
     fig.update_layout(
-        title=f'Évolution de la vitesse moyenne par distance pour {categorie_nom} (2014-2024)',
+        title=f'Évolution de la vitesse moyenne par distance pour {categorie_nom}.',
         xaxis=dict(title='Année', tickmode='linear'),
         yaxis=dict(title='Vitesse moyenne (km/h)', range=[6, 20]),
         legend=dict(title='Distance'),
@@ -458,7 +463,7 @@ def evolution_vitesse_par_categorie_data(categorie_simplifiee_id):
     # Informations pour le layout
     categorie_nom = CategorieSimplifiee.objects.get(id=categorie_simplifiee_id).nom
     layout = {
-        'title': f'Évolution de la vitesse moyenne par distance pour {categorie_nom} (2014-2024)',
+        'title': f'Évolution de la vitesse moyenne par distance pour {categorie_nom}.',
         'xaxis': {'title': 'Année', 'tickmode': 'linear'},
         'yaxis': {'title': 'Vitesse moyenne (km/h)', 'range': [6, 20]},
         'legend': {'title': 'Distance'},

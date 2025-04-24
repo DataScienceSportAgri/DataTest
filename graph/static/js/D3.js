@@ -84,8 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Filtered individual data:", individualData);
                     // Définir les échelles
 
-
-
             // Log data counts by type
             console.log("Data count by type:", {
                 total: data.length,
@@ -116,61 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 2. Regrouper les séries individuelles par groupe
         const groupedData = d3.groups(individualData, d => d.groupe_safe);
-
-        // 3. Dessiner chaque groupe de séries dans son propre conteneur
-        groupedData.forEach(([groupe, series]) => {
-            // Créer un conteneur de groupe qui sera réactif au survol
-            const groupContainer = mainGroup.append("g")
-                .attr("class", `group-${groupe}`)
-                .style("opacity", 0.1)  // Faible opacité initiale
-                .on("mouseover", function() {
-                    d3.select(this).transition().duration(200).style("opacity", 0.5);
-                })
-                .on("mouseout", function() {
-                    d3.select(this).transition().duration(200).style("opacity", 0.1);
-                });
-
-            // Dessiner toutes les séries du groupe à l'intérieur du conteneur
-            groupContainer.selectAll(".series")
-                .data(series)
-                .enter().append("path")
-                .attr("class", "series")
-                .attr("d", d => lineGenerator(d.values))
-                .style("stroke", d => d.color)
-                .style("fill", "none")
-                .on("mouseover", function(event, d) {
-                    // Mettre en évidence la série survolée
-                    d3.select(this)
-                        .transition()
-                        .duration(200)
-                        .style("stroke-width", 4)
-                        .style("opacity", 1);
-
-                    // Afficher le label du coureur
-                    const lastPoint = d.values[d.values.length - 1];
-                    mainGroup.append("text")
-                        .attr("class", "hover-label")
-                        .attr("x", xScale(lastPoint.date))
-                        .attr("y", yScale(lastPoint.score) - 10)
-                        .attr("text-anchor", "middle")
-                        .attr("fill", d.color)
-                        .style("font-weight", "bold")
-                        .text(`${d.prenom_marsien || ""} ${d.nom_marsien || d.nom || ""}`);
-                })
-                .on("mouseout", function() {
-                    // Restaurer l'apparence normale
-                    d3.select(this)
-                        .transition()
-                        .duration(200)
-                        .style("stroke-width", 2)
-                        .style("opacity", 1);
-
-                    // Supprimer le label
-                    mainGroup.selectAll(".hover-label").remove();
-                });
-        });
-
-        // 4. DESSINER LES TENDANCES AVEC DES STYLES DISTINCTS
+// 4. DESSINER LES TENDANCES AVEC DES STYLES DISTINCTS
         // Définir des styles distincts pour chaque tendance
         const dashPatterns = ["4 2", "8 4", "2 2", "1 1"];
         const strokeWidths = [2, 2.5, 3, 3.5];
@@ -234,6 +178,60 @@ document.addEventListener('DOMContentLoaded', function() {
             // Confirmer que la tendance a bien été tracée
             console.log(`Trend ${i} drawn with color ${trend.color}`);
         });
+        // 3. Dessiner chaque groupe de séries dans son propre conteneur
+        groupedData.forEach(([groupe, series]) => {
+            // Créer un conteneur de groupe qui sera réactif au survol
+            const groupContainer = mainGroup.append("g")
+                .attr("class", `group-${groupe}`)
+                .style("opacity", 0.1)  // Faible opacité initiale
+                .on("mouseover", function() {
+                    d3.select(this).transition().duration(200).style("opacity", 0.5);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).transition().duration(200).style("opacity", 0.1);
+                });
+
+            // Dessiner toutes les séries du groupe à l'intérieur du conteneur
+            groupContainer.selectAll(".series")
+                .data(series)
+                .enter().append("path")
+                .attr("class", "series")
+                .attr("d", d => lineGenerator(d.values))
+                .style("stroke", d => d.color)
+                .style("fill", "none")
+                .on("mouseover", function(event, d) {
+                    // Mettre en évidence la série survolée
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .style("stroke-width", 4)
+                        .style("opacity", 1);
+
+                    // Afficher le label du coureur
+                    const lastPoint = d.values[d.values.length - 1];
+                    mainGroup.append("text")
+                        .attr("class", "hover-label")
+                        .attr("x", xScale(lastPoint.date))
+                        .attr("y", yScale(lastPoint.score) - 10)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", d.color)
+                        .style("font-weight", "bold")
+                        .text(`${d.prenom_marsien || d.prenom || ""} " " ${d.nom_marsien || d.nom || ""}`);
+                })
+                .on("mouseout", function() {
+                    // Restaurer l'apparence normale
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .style("stroke-width", 2)
+                        .style("opacity", 1);
+
+                    // Supprimer le label
+                    mainGroup.selectAll(".hover-label").remove();
+                });
+        });
+
+
 
         } else {
             // Traitement des nuages de points et lignes de tendance (coureur_type='tous')
@@ -251,48 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .domain([0, d3.max(allScores)])
                 .range([height, 0]);
 
-            // Dessiner les points (scatter plot)
-            pointSeries.forEach(series => {
-                // Filtrer les points valides (avec score et date)
-                const validPoints = series.points.filter(p => !isNaN(p.date) && !isNaN(p.score));
-                mainGroup.selectAll(`.point-${series.groupe_safe}`)
-                    .data(validPoints)
-                    .enter().append("circle")
-                    .attr("class", `point-${series.groupe_safe}`)
-                    .attr("cx", d => xScale(d.date))
-                    .attr("cy", d => yScale(d.score))
-                    .attr("r", 3)
-                    .style("fill", series.color)
-                    .style("opacity", 0.6)
-                    .on("mouseover", function(event, d) {
-                        tooltip.transition()
-                            .duration(200)
-                            .style("opacity", 0.9);
 
-                        tooltip.html(`
-                            <strong>${d.prenom_marsien || ""} ${d.nom_marsien || d.nom || ""}</strong><br>
-                            Date: ${d.date}<br>
-                            Score: ${d.score.toFixed(2)}
-                        `)
-                        .style("left", `${event.pageX + 10}px`)
-                        .style("top", `${event.pageY - 28}px`);
-
-                        d3.select(this)
-                            .transition()
-                            .style("opacity", 1)
-                            .attr("r", 5);
-                    })
-                    .on("mouseout", function() {
-                        tooltip.transition()
-                            .duration(500)
-                            .style("opacity", 0);
-
-                        d3.select(this)
-                            .transition()
-                            .style("opacity", 0.6)
-                            .attr("r", 3);
-                    });
-            });
 
             // Affichage des tendances et équations
             trendSeries.forEach(trend => {
@@ -342,6 +299,48 @@ document.addEventListener('DOMContentLoaded', function() {
                         .attr("fill-opacity", 0.2)
                         .attr("stroke", "none");
                 }
+            });
+            // Dessiner les points (scatter plot)
+            pointSeries.forEach(series => {
+                // Filtrer les points valides (avec score et date)
+                const validPoints = series.points.filter(p => !isNaN(p.date) && !isNaN(p.score));
+                mainGroup.selectAll(`.point-${series.groupe_safe}`)
+                    .data(validPoints)
+                    .enter().append("circle")
+                    .attr("class", `point-${series.groupe_safe}`)
+                    .attr("cx", d => xScale(d.date))
+                    .attr("cy", d => yScale(d.score))
+                    .attr("r", 3)
+                    .style("fill", series.color)
+                    .style("opacity", 0.6)
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+
+                        tooltip.html(`
+                            <strong>${d.prenom_marsien || d.prenom || ""} ${d.nom_marsien || d.nom || ""}</strong><br>
+                            Date: ${d.date}<br>
+                            Score: ${d.score.toFixed(2)}
+                        `)
+                        .style("left", `${event.pageX + 10}px`)
+                        .style("top", `${event.pageY - 28}px`);
+
+                        d3.select(this)
+                            .transition()
+                            .style("opacity", 1)
+                            .attr("r", 5);
+                    })
+                    .on("mouseout", function() {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+
+                        d3.select(this)
+                            .transition()
+                            .style("opacity", 0.6)
+                            .attr("r", 3);
+                    });
             });
         }
 

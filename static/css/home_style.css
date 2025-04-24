@@ -48,9 +48,9 @@ main {
 
 .rocket-container {
     position: fixed;
-    top: 10%;
+    top: 2%;
     left: 20px;
-    width: 120px; /* Largeur fixe de la fusée */
+    width: 70px; /* Largeur fixe de la fusée */
     height: 600px; /* Hauteur fixe de la fusée */
     display: flex;
     flex-direction: column; /* Organise les enfants verticalement */
@@ -60,7 +60,7 @@ main {
 .stages-container {
     width: 100%;
     bottom: 10%;
-    height: 70%; /* Ajuste la hauteur automatiquement */
+    height: 80%; /* Ajuste la hauteur automatiquement */
     display: flex;
     flex-direction: row;
 }
@@ -88,24 +88,24 @@ main {
 
 .nose {
     position: absolute;
-    bottom: 70%;
-    left: 27.5%; /* (100% - 45%) / 2 pour centrer */
-    width: 45%;
-    height: 30%; /* Occupe les 70% supérieurs */
-    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff);
+    bottom: 77.5%;
+    left: 28%; /* (100% - 45%) / 2 pour centrer */
+    width: 65%;
+    height: 20%; /* Occupe les 70% supérieurs */
+    background: linear-gradient(to right, #1a1a1a, #333333 50%, #4d4d4d);
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
-                inset 5px 5px 10px rgba(255, 255, 255, 0.2),
-                -5px -5px 10px rgba(0, 0, 0, 0.3),
-                5px 5px 10px rgba(255, 255, 255, 0.1);
+    box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.7),
+                inset 3px 3px 8px rgba(255, 255, 255, 0.1),
+                -3px -3px 8px rgba(0, 0, 0, 0.5),
+                3px 3px 8px rgba(255, 255, 255, 0.05);
 }
 
 .nose-button {
     position: absolute;
-    bottom: 70%;
-    left: 27.5%;
-    width: 45%;
-    height: 30%;
+    bottom: 77.5%;
+    left: 16%;
+    width: 68%;
+    height: 22%;
     border: none;
     box-sizing: border-box;
     cursor: pointer;
@@ -115,70 +115,87 @@ main {
     border-radius: 10px;
     display: flex;
     justify-content: center;
-    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff);
+    background: linear-gradient(to right, #1a1a1a, #333333 50%, #4d4d4d);
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5),
-                inset 5px 5px 10px rgba(255, 255, 255, 0.2),
-                -5px -5px 10px rgba(0, 0, 0, 0.3),
-                5px 5px 10px rgba(255, 255, 255, 0.1);
+    box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.7),
+                inset 3px 3px 8px rgba(255, 255, 255, 0.1),
+                -3px -3px 8px rgba(0, 0, 0, 0.5),
+                3px 3px 8px rgba(255, 255, 255, 0.05);
 }
 
 .nose-button:hover {
     transform: scale(1.05);
     z-index: 1;
 }
+/* Pour le nez avec un effet violet */
+.nose, .nose-button {
+    box-shadow:
+        inset 0 0 15px rgba(165, 0, 255, 0.7),
+        inset 0 0 7px rgba(69, 0, 255, 0.9);
+}
 /* Styles communs pour tous les étages */
 .stage1, .stage2, .stage3 {
     align-items: center;
-    background: linear-gradient(to right, #6e6e6e, #b0b0b0 50%, #ffffff); /* Lumière venant de droite */
-    box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.5), /* Ombre interne gauche */
-                inset 5px 5px 10px rgba(255, 255, 255, 0.3), /* Lumière interne droite */
-                -5px -5px 10px rgba(0, 0, 0, 0.2), /* Ombre externe gauche */
-                5px 5px 10px rgba(255, 255, 255, 0.2); /* Lumière externe droite */
-    border-radius: 8px; /* Coins légèrement arrondis pour un effet cylindrique */
+   background: linear-gradient(to right, #1a1a1a, #333333 50%, #4d4d4d);
+    box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.7),
+                inset 3px 3px 8px rgba(255, 255, 255, 0.1),
+                -3px -3px 8px rgba(0, 0, 0, 0.5),
+                3px 3px 8px rgba(255, 255, 255, 0.05);
+    border-radius: 3px; /* Coins beaucoup moins arrondis pour un aspect plus industriel */
 }
 
 /* Étape 1 : Base de la fusée */
 .stage1 {
-    height: 22.5%;
-    bottom: 10%;
-    background: linear-gradient(to right, #4d4d4d, #8c8c8c 50%, #d6d6d6); /* Dégradé métallique plus sombre */
+    height: 25%;
+    bottom: 5.5%;
+    background: linear-gradient(to right, #0d0d0d, #262626 50%, #404040);
+        box-shadow:
+        inset 0 -20px 30px -5px rgba(255, 165, 0, 0.7),
+        inset 0 -10px 15px -2px rgba(255, 69, 0, 0.9);
 }
 
 /* Étape 2 : Milieu de la fusée */
 .stage2 {
-    height: 20%;
-    bottom: 32.5%;
-    width: 80%;
-    left: 10%;
-    background: linear-gradient(to right, #6e6e6e, #a9a9a9 50%, #e6e6e6); /* Dégradé métallique intermédiaire */
+    height: 24%;
+    bottom: 30.5%;
+    width: 87%;
+    left: 6.5%;
+    background: linear-gradient(to right, #141414, #2e2e2e 50%, #474747); /* Très sombre */
+        box-shadow:
+        inset 0 0 15px rgba(0, 165, 255, 0.7),
+        inset 0 0 7px rgba(0, 69, 255, 0.9);
 }
 
 /* Étape 3 : Haut de la fusée */
 .stage3 {
-    height: 17.5%;
-    bottom: 52.5%;
-    width: 60%;
-    left: 20%;
-    background: linear-gradient(to right, #8c8c8c, #bdbdbd 50%, #f2f2f2); /* Dégradé métallique plus clair pour le sommet */
+    height: 23%;
+    bottom: 54.5%;
+    width: 73%;
+    left: 13.5%;
+    background: linear-gradient(to right, #1a1a1a, #333333 50%, #4d4d4d); /* Sombre mais légèrement plus clair */
+box-shadow:
+        inset 0 0 15px rgba(0, 255, 165, 0.7),
+        inset 0 0 7px rgba(0, 255, 69, 0.9);
+
 }
 
 /* Conteneur principal pour les champs et le satellite */
 .fields-container {
     position: absolute;
     bottom: 17%;
-    width: 45%; /* Occupe toute la largeur de stage1 */
-    height: 35%; /* Occupe toute la hauteur de stage1 */
+    width: 45%;
+    height: 35%;
     display: flex;
     justify-content: center;
     align-items: center;
-    transform: rotate(70deg); /* Angle global pour diagonalisation */
+    z-index: 1;
+    transform: rotate(70deg);
 }
 
 /* Champs stylisés */
 .fields {
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Changez hidden à visible */
 }
 
 /* Champ vert */
@@ -189,6 +206,7 @@ main {
     width: 50%; /* Largeur du champ */
     height: 50%; /* Hauteur du champ */
     transform-origin: bottom right; /* Pivot en bas à droite */
+    transform: rotate(70deg) perspective(150px) rotateX(-35deg) rotateY(35deg);
 }
 
 /* Champ jaune */
@@ -198,6 +216,7 @@ main {
     left: 50%; /* Alignement par le coin supérieur droit du champ vert */
     width: 50%; /* Largeur du champ */
     height: 50%; /* Hauteur du champ */
+    transform: rotate(70deg) perspective(150px) rotateX(35deg) rotateY(-35deg);
 }
 
 /* Stries verticales dans les champs verts et jaunes */
@@ -205,13 +224,29 @@ main {
     position: absolute;
     top: 0;
     height: 100%;
-    background-color: #4caf50;
+    background: linear-gradient(
+        to bottom,
+        #3a9639 0%,
+        #4caf50 30%,
+        #45a049 70%,
+        #3a9639 100%
+    );
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+    transform: skewY(-2deg); /* Légère inclinaison */
 }
 .field2 .stripe {
     position: absolute;
-    top: 0;
     height: 100%;
-    background-color: #ffeb3b;
+    background: linear-gradient(
+        to bottom,
+        #e6d335 0%,
+        #ffeb3b 30%,
+        #fdd835 70%,
+        #e6d335 100%
+    );
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+    border-radius: 30% 0 0 30%;
+    transform: skewY(2deg); /* Légère inclinaison dans l'autre sens */
 }
 
 .field1 .stripe,
@@ -219,26 +254,192 @@ main {
     width: 3%; /* Largeur des stries ajustée pour plus de finesse */
 }
 
-/* Génération des stries avec espacement régulier */
-.field1 .stripe:nth-child(1) { left: 5%; }
-.field1 .stripe:nth-child(2) { left: 20%; }
-.field1 .stripe:nth-child(3) { left: 35%; }
-.field1 .stripe:nth-child(4) { left: 55%; }
-.field1 .stripe:nth-child(5) { left: 70%; }
-.field1 .stripe:nth-child(6) { left: 95%; }
+/* Stries vertes (field1) avec effet cylindrique amélioré */
+.field1 .stripe.s1 {
+    --random-offset: 2%;
+    --random-offset-x: -1%;
+    transform: skewY(-4deg) rotate(-2deg) translateZ(2px) translate(var(--random-offset-x), var(--random-offset));
+    left: 5%;
+    width: 2.7%;
+    border-radius: 40% 10% 10% 40% / 5%;
+}
 
-.field2 .stripe:nth-child(1) { left: 10%; }
-.field2 .stripe:nth-child(2) { left: 25%; }
-.field2 .stripe:nth-child(3) { left: 40%; }
-.field2 .stripe:nth-child(4) { left: 55%; }
-.field2 .stripe:nth-child(5) { left: 70%; }
-.field2 .stripe:nth-child(6) { left: 95%; }
+.field1 .stripe.s2 {
+    --random-offset: -1.5%;
+    --random-offset-x: 3%;
+    transform: skewY(-3deg) rotate(-1deg) translateZ(1.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 20%;
+    width: 2.8%;
+    border-radius: 35% 10% 10% 35% / 5%;
+}
+
+.field1 .stripe.s3 {
+    --random-offset: 2%;
+    --random-offset-x: 2%;
+    transform: skewY(-2deg) rotate(-0.5deg) translateZ(1px) translate(var(--random-offset-x), var(--random-offset));
+    left: 35%;
+    width: 2.9%;
+    border-radius: 25% 10% 10% 25% / 5%;
+}
+
+.field1 .stripe.s4 {
+    --random-offset: -1%;
+    --random-offset-x: -1%;
+    transform: skewY(-1deg) rotate(0deg) translateZ(0.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 55%;
+    width: 3%;
+    border-radius: 15% 10% 10% 15% / 5%;
+}
+
+.field1 .stripe.s5 {
+    --random-offset: 1%;
+    --random-offset-x: 2%;
+    transform: skewY(0deg) rotate(0.5deg) translateZ(0px) translate(var(--random-offset-x), var(--random-offset));
+    left: 70%;
+    width: 2.9%;
+    border-radius: 10% 20% 20% 10% / 5%;
+}
+
+.field1 .stripe.s6 {
+    --random-offset: -1%;
+    --random-offset-x: -1%;
+    transform: skewY(1deg) rotate(1deg) translateZ(-0.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 95%;
+    width: 2.8%;
+    border-radius: 10% 30% 30% 10% / 5%;
+}
+
+/* Stries jaunes (field2) avec effet cylindrique amélioré */
+.field2 .stripe.s1 {
+    --random-offset: -2%;
+    --random-offset-x: 2%;
+    transform: skewY(4deg) rotate(-2deg) translateZ(-0.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 10%;
+    width: 2.8%;
+    border-radius: 10% 30% 30% 10% / 5%;
+}
+
+.field2 .stripe.s2 {
+    --random-offset: 2%;
+    --random-offset-x: -2%;
+    transform: skewY(3deg) rotate(-1deg) translateZ(0px) translate(var(--random-offset-x), var(--random-offset));
+    left: 25%;
+    width: 2.9%;
+    border-radius: 10% 25% 25% 10% / 5%;
+}
+
+.field2 .stripe.s3 {
+    --random-offset: -1%;
+    --random-offset-x: -2%;
+    transform: skewY(2deg) rotate(-0.5deg) translateZ(0.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 40%;
+    width: 3%;
+    border-radius: 10% 20% 20% 10% / 5%;
+}
+
+.field2 .stripe.s4 {
+    --random-offset: 2%;
+    --random-offset-x: 1%;
+    transform: skewY(1deg) rotate(0deg) translateZ(1px) translate(var(--random-offset-x), var(--random-offset));
+    left: 55%;
+    width: 2.9%;
+    border-radius: 10% 15% 15% 10% / 5%;
+}
+
+.field2 .stripe.s5 {
+    --random-offset: -2%;
+    --random-offset-x: -1%;
+    transform: skewY(0deg) rotate(0.5deg) translateZ(1.5px) translate(var(--random-offset-x), var(--random-offset));
+    left: 70%;
+    width: 2.8%;
+    border-radius: 10% 25% 25% 10% / 5%;
+}
+
+.field2 .stripe.s6 {
+    --random-offset: 1%;
+    --random-offset-x: 2%;
+    transform: skewY(-1deg) rotate(1deg) translateZ(2px) translate(var(--random-offset-x), var(--random-offset));
+    left: 95%;
+    width: 2.7%;
+    border-radius: 10% 40% 40% 10% / 5%;
+}
+
+/* Ajoutez ces styles à vos stries vertes */
+.field1 .stripe {
+    background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.18),
+        transparent 30%,
+        transparent 70%,
+        rgba(0,0,0,0.18)
+    ),
+    linear-gradient(
+        to bottom,
+        #3a9639 0%,
+        #4caf50 30%,
+        #45a049 70%,
+        #3a9639 100%
+    );
+    box-shadow: inset 2px 0 3px rgba(0,0,0,0.2),
+                inset -1px 0 2px rgba(255,255,255,0.1);
+}
+
+/* Ajoutez ces styles à vos stries jaunes */
+.field2 .stripe {
+    background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.18),
+        transparent 30%,
+        transparent 70%,
+        rgba(0,0,0,0.18)
+    ),
+    linear-gradient(
+        to bottom,
+        #e6d335 0%,
+        #ffeb3b 30%,
+        #fdd835 70%,
+        #e6d335 100%
+    );
+    box-shadow: inset -2px 0 3px rgba(0,0,0,0.2),
+                inset 1px 0 2px rgba(255,255,255,0.1);
+}
+/* Variation d'opacité pour les stries vertes */
+.field1 .stripe.s1 { opacity: 0.9; }
+.field1 .stripe.s2 { opacity: 0.92; }
+.field1 .stripe.s3 { opacity: 0.95; }
+.field1 .stripe.s4 { opacity: 0.98; }
+.field1 .stripe.s5 { opacity: 0.95; }
+.field1 .stripe.s6 { opacity: 0.9; }
+
+/* Variation d'opacité pour les stries jaunes */
+.field2 .stripe.s1 { opacity: 0.9; }
+.field2 .stripe.s2 { opacity: 0.92; }
+.field2 .stripe.s3 { opacity: 0.95; }
+.field2 .stripe.s4 { opacity: 0.98; }
+.field2 .stripe.s5 { opacity: 0.95; }
+.field2 .stripe.s6 { opacity: 0.9; }
+
 /* Satellite positionné au-dessus des champs */
 .satellite {
     position:absolute;
-    top: -65%; /* Positionnement au-dessus des champs */
-    right: 110%; /* Positionnement à droite des champs */
+    top: -20%;
+    right: 135%;
     font-size: 1.5em;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+.satellite::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle at 30% 30%,
+        rgba(255,255,255,0.5) 5%,
+        transparent 30%
+    );
+    pointer-events: none;
 }
 
 
@@ -277,6 +478,9 @@ main {
     display: flex;
     justify-content: space-around;
     width: 100%;
+    flex-direction: column; /* Ajouter cette ligne pour empiler verticalement */
+    align-items: center; /* Centre les bulles horizontalement */
+    height: 100px; /* Ajouter une hauteur pour espacer les bulles */
 }
 
 .bubble {
@@ -298,57 +502,120 @@ main {
     width: 100%; /* Prend toute la largeur du parent */
     height: 10%; /* Occupe 10% de la hauteur du parent */
 }
-
-.blades {
-    position: relative;
-    width: 100%; /* Prend toute la largeur du booster */
-    height: 100%; /* Prend toute la hauteur du booster */
-    display: flex;
-    justify-content: space-around; /* Espace égal entre les lames */
-    align-items: flex-end; /* Aligne les lames au bas du booster */
-}
-:root {
-    --radius: 20px; /* Contrôle du rayon des coins arrondis */
-}
-/* Lames métalliques */
 .blade {
-    position: absolute; /* Nécessaire pour utiliser `left` */
-    bottom: 0; /* Aligne les lames au bas du conteneur */
-    width: 17%; /* Largeur relative au conteneur des lames */
-    height: 97%; /* Prend toute la hauteur du conteneur des lames */
-    background: linear-gradient(to right, #4d4d4d, #b0b0b0, #ffffff);
+    position: absolute;
+    bottom: 0;
+    width: 17%;
+    height: 97%;
+    /* Nouveau dégradé métallique avec brunissement au centre */
+    background: linear-gradient(to right, #333333, #707070, #a0a0a0);
     border-radius: 0.2%;
-    transform-origin: bottom center; /* Point d'origine pour la rotation */
-     aspect-ratio: 1; /* Maintient un ratio pour un triangle équilatéral */
+    transform-origin: bottom center;
+    aspect-ratio: 1;
     clip-path: polygon(
-        50% 0%,       /* Pointe supérieure */
-        calc(100% - var(--radius)) calc(100% - var(--radius)), /* Coin inférieur droit arrondi */
-        var(--radius) calc(100% - var(--radius)),             /* Coin inférieur gauche arrondi */
-        50% 0%        /* Retour à la pointe supérieure */
+        50% 0%,
+        calc(100% - var(--radius)) calc(100% - var(--radius)),
+        var(--radius) calc(100% - var(--radius)),
+        50% 0%
     );
     mask: radial-gradient(var(--radius), #000 98%, transparent 101%) space no-repeat,
           conic-gradient(from -30deg at 50% calc(200% - 3*var(--radius)/2), #000 60deg, transparent 0);
     mask-composite: intersect;
     mask-size: cover;
     background-clip: content-box;
+    /* Ajout d'un effet de brillance métallique */
+    box-shadow:
+        inset 0 0 10px rgba(255, 255, 255, 0.3),
+        inset 0 0 5px rgba(255, 255, 255, 0.5);
+    filter: brightness(80%);
+     display: none;
 }
 
-/* Positionnement des lames visibles avec rotation et décalage horizontal */
-.blade:nth-child(3) { transform: rotate(20deg); left: 5%; }
-.blade:nth-child(4) { transform: rotate(10deg); left: 15%; }
-.blade:nth-child(5) { transform: rotate(0deg); left: 50%; } /* Centre */
-.blade:nth-child(6) { transform: rotate(-10deg); left: 85%; }
-.blade:nth-child(7) { transform: rotate(-20deg); left: 95%; }
+/* Positionnement des lames avec effet de brunissement personnalisé pour chaque lame */
+.blade:nth-child(3) {
+    transform: rotate(20deg);
+    left: -5%; /* Ajustez cette valeur */
+    transform-origin: bottom center;
+     display: block;
+}
 
+.blade:nth-child(4) {
+    transform: rotate(10deg);
+    left: 10%;
+    background: linear-gradient(
+        to right,
+        #4d4d4d,
+        #707070 30%,
+        #8a7060 50%,
+        #a0a0a0 70%,
+        #d0d0d0
+    );
+         display: block;
+}
+
+.blade:nth-child(5) {
+    transform: rotate(3deg);
+    left: 40%;
+    /* Lame centrale avec plus de brunissement (proche de la flamme) */
+    background: linear-gradient(to right, #4d4d4d, #705040, #907060);
+    filter: brightness(85%);
+         display: block;
+}
+.blade:nth-child(9) {
+    transform: rotate(-3deg);
+    left: 47%;
+    /* Lame centrale avec plus de brunissement (proche de la flamme) */
+    background: linear-gradient(to right, #4d4d4d, #705040, #907060);
+    filter: brightness(85%);
+         display: block;
+}
+
+.blade:nth-child(6) {
+    transform: rotate(-10deg);
+    left: 80%;
+    background: linear-gradient(
+        to right,
+        #4d4d4d,
+        #707070 30%,
+        #8a7060 50%,
+        #a0a0a0 70%,
+        #d0d0d0
+    );
+         display: block;
+}
+
+.blade:nth-child(7) {
+    transform: rotate(-20deg);
+    left: 90%;
+         display: block;
+}
+/* Lames extérieures (plus métalliques) */
+.blade:nth-child(3),
+.blade:nth-child(7) {
+    background: linear-gradient(to right, #333333, #555555, #777777);
+    filter: brightness(75%);
+}
+
+/* Amélioration de la flamme pour qu'elle illumine les lames */
 .center-flame {
     position: absolute;
-    bottom: 0; /* Alignée au bas du booster */
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 20%; /* Largeur relative au booster */
-    height: 100%; /* Prend toute la hauteur du booster */
+    width: 20%;
+    height: 100%;
     background: radial-gradient(circle, rgba(255,165,0,1) 0%, rgba(255,69,0,1) 70%, rgba(255,0,0,0.5) 100%);
+    /* Ajout d'un effet de lueur pour illuminer les lames */
+    box-shadow: 0 0 20px 5px rgba(255, 69, 0, 0.6);
+    /* Animation subtile pour la flamme */
+    animation: flameFlicker 0.5s infinite alternate;
 }
+
+@keyframes flameFlicker {
+    0% { opacity: 0.9; }
+    100% { opacity: 1; }
+}
+
 
 /* Style commun à la box */
 .info-box {
@@ -435,4 +702,263 @@ h2 {
     top: auto;        /* Override the top: 50% from general tooltip */
     transform: translateX(-50%); /* Center precisely */
     white-space: normal;
+}
+
+.text-cylindrique {
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Industry', Arial, sans-serif;
+  color: transparent; /* Déplacez cette ligne avant les propriétés background-clip */
+  text-transform: uppercase;
+  z-index: 3;
+
+background:
+  radial-gradient(circle at 15% 25%, transparent 85%, rgba(50,50,50,0.8) 90%, transparent 95%) 0 0/12px 12px,
+  radial-gradient(circle at 75% 60%, transparent 85%, rgba(70,70,70,0.7) 90%, transparent 95%) 0 0/10px 10px,
+  radial-gradient(circle at 30% 20%, transparent 8%, white 9%, white 10%, transparent 11%) 0 0/8px 8px,
+  radial-gradient(circle at 70% 50%, transparent 8%, white 9%, white 10%, transparent 11%) 0 0/10px 10px,
+  linear-gradient(to right, rgba(180,180,180,0.9), white 30%, white 70%, rgba(150,150,150,0.9));
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+}
+
+
+/* Styles spécifiques pour A3 (étage inférieur, cylindre large) */
+#text-a3 {
+  top: 10%;
+  left: 15%;
+  transform: perspective(150px) rotateY(-35deg);
+  transform-origin: right center;
+}
+
+/* Styles spécifiques pour A2 (étage intermédiaire, cylindre moyen) */
+#text-a2 {
+  top: 12%;
+  left: 4.2%;
+  transform: perspective(120px) rotateY(-40deg);
+  transform-origin: right center;
+}
+
+/* Styles spécifiques pour A1 (étage supérieur, cylindre étroit) */
+#text-a1 {
+  top: 15%;
+  left: -7.8%;
+  transform: perspective(100px) rotateY(-45deg);
+  transform-origin: right center;
+}
+
+/* Styles spécifiques pour A0 (nez, perspective vers un point) */
+#text-a0 {
+  top: 50%;
+  left: 22%;
+  transform: perspective(80px) rotateY(-50deg) rotateX(10deg);
+  transform-origin: center center;
+  font-size: 20px; /* Plus petit pour le nez */
+}
+
+
+
+/* Points pour le satellite */
+.satellite::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  width: 3px;
+  height: 3px;
+  background-color: rgba(255,255,255,0.7);
+  border-radius: 50%;
+}
+
+.satellite::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 3px;
+  width: 2px;
+  height: 2px;
+  background-color: rgba(255,255,255,0.7);
+  border-radius: 50%;
+}
+
+/* Points pour le coureur */
+.runner::before, .runner::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background-color: rgba(255,255,255,0.7);
+  border-radius: 50%;
+}
+
+.runner::before {
+  top: -5px;
+  left: 10px;
+}
+
+.runner::after {
+  bottom: -5px;
+  right: 10px;
+}
+
+/* Flexion plus prononcée pour chaque cylindre selon la hauteur */
+.stage1 .icons {
+  transform: perspective(300px) rotateY(-15deg);
+}
+
+.stage2 .icons {
+  transform: perspective(250px) rotateY(-20deg);
+}
+
+.stage3 .icons {
+  transform: perspective(200px) rotateY(-25deg);
+}
+
+.nose .icons {
+  transform: perspective(150px) rotateY(-30deg) rotateX(5deg);
+}
+
+/* Ajustement spécifique pour les bulles */
+.bubbles {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  height: 100px;
+  gap: 8px; /* Espacement entre les bulles */
+  transform: perspective(200px) rotateY(-25deg); /* Flexion pour suivre la courbure */
+}
+
+/* Effet de perspective sur les bulles individuelles */
+.bubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  position: relative;
+    transform: translateZ(0px);
+}
+
+
+.satellite {
+  position: absolute;
+  top: -65%;
+  right: 185%;
+  font-size: 1.5em;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  transform: perspective(300px) rotateY(-15deg);
+}
+
+/* Variation de la transformation pour chaque bulle avec compression vers la gauche */
+.bubble.red {
+  transform: perspective(200px) rotateY(-25deg) translateZ(2px) translateX(-1px) scaleX(0.85);
+  transform-origin: left center;
+  background: linear-gradient(to right,
+    color-mix(in oklab, red, black 30%) 0%,
+    red 70%);
+  box-shadow: inset -2px 0 3px rgba(0,0,0,0.3);
+}
+
+.bubble.green {
+  transform: perspective(200px) rotateY(-25deg) translateZ(1px) scaleX(0.88);
+  transform-origin: left center;
+  background: linear-gradient(to right,
+    color-mix(in oklab, green, black 30%) 0%,
+    green 70%);
+  box-shadow: inset -2px 0 3px rgba(0,0,0,0.3);
+}
+
+.bubble.blue {
+  transform: perspective(200px) rotateY(-25deg) translateZ(0px) scaleX(0.9);
+  transform-origin: left center;
+  background: linear-gradient(to right,
+    color-mix(in oklab, blue, black 30%) 0%,
+    blue 70%);
+  box-shadow: inset -2px 0 3px rgba(0,0,0,0.3);
+}
+
+.bubble.yellow {
+  transform: perspective(200px) rotateY(-25deg) translateZ(-1px) translateX(1px) scaleX(0.92);
+  transform-origin: left center;
+  background: linear-gradient(to right,
+    color-mix(in oklab, yellow, black 30%) 0%,
+    yellow 70%);
+  box-shadow: inset -2px 0 3px rgba(0,0,0,0.3);
+}
+
+/* Ajout de points pour l'effet peinture sur chaque bulle */
+.bubble::before, .bubble::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.bubble.red::before {
+  width: 3px;
+  height: 3px;
+  background-color: darkred;
+  top: 20%;
+  left: 30%;
+}
+
+.bubble.red::after {
+  width: 2px;
+  height: 2px;
+  background-color: #ff6666;
+  bottom: 25%;
+  right: 35%;
+}
+
+.bubble.green::before {
+  width: 3px;
+  height: 3px;
+  background-color: darkgreen;
+  top: 25%;
+  left: 35%;
+}
+
+.bubble.green::after {
+  width: 2px;
+  height: 2px;
+  background-color: lightgreen;
+  bottom: 30%;
+  right: 25%;
+}
+
+.bubble.blue::before {
+  width: 3px;
+  height: 3px;
+  background-color: darkblue;
+  top: 30%;
+  left: 25%;
+}
+
+.bubble.blue::after {
+  width: 2px;
+  height: 2px;
+  background-color: lightblue;
+  bottom: 35%;
+  right: 30%;
+}
+
+.bubble.yellow::before {
+  width: 3px;
+  height: 3px;
+  background-color: #b3a600;
+  top: 35%;
+  left: 20%;
+}
+
+.bubble.yellow::after {
+  width: 2px;
+  height: 2px;
+  background-color: #ffff99;
+  bottom: 20%;
+  right: 40%;
 }
