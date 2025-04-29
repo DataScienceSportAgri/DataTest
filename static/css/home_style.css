@@ -46,6 +46,20 @@ main {
     z-index: -1;
 }
 
+.white-diagonal-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background:
+    url('../images/bigdata.avif') center/cover no-repeat;
+  clip-path: polygon(13% 0, 100% 0, 100% 100%, 17% 100%);
+  /* Ajuste les points pour la diagonale selon ton besoin */
+  pointer-events: none; /* Pour ne pas gêner les clics */
+  opacity: 0.92; /* Ajuste si nécessaire */
+}
+
 .rocket-container {
     position: fixed;
     top: 2%;
@@ -641,10 +655,10 @@ box-shadow:
 
 /* Style pour l'état centré */
 .info-box.centered {
-    bottom: 25px; /* La partie basse de l'encadré est à 30px du bas de la page */
+    bottom: 65px; /* La partie basse de l'encadré est à 30px du bas de la page */
     left: calc(50% - 540px); /* Centré horizontalement (600px de largeur totale) */
     width: 1080px; /* Largeur finale */
-    height: 485px; /* Hauteur finale */
+    height: 500px; /* Hauteur finale */
     font-size: calc(14px * 1.5); /* Augmente la taille du texte de 1,5 fois */
 }
 h2 {
@@ -763,38 +777,6 @@ background:
 
 
 
-/* Points pour le satellite */
-.satellite::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: 5px;
-  width: 3px;
-  height: 3px;
-  background-color: rgba(255,255,255,0.7);
-  border-radius: 50%;
-}
-
-.satellite::after {
-  content: "";
-  position: absolute;
-  bottom: -8px;
-  right: 3px;
-  width: 2px;
-  height: 2px;
-  background-color: rgba(255,255,255,0.7);
-  border-radius: 50%;
-}
-
-/* Points pour le coureur */
-.runner::before, .runner::after {
-  content: "";
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  background-color: rgba(255,255,255,0.7);
-  border-radius: 50%;
-}
 
 .runner::before {
   top: -5px;

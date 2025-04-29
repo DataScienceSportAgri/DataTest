@@ -7,15 +7,16 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/home_style.css' %}">
 {% endblock %}
-        <div class="star-background"> <!-- Conteneur pour le fond étoilé -->
-  <div id="planet-foreground" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
-          </div>
+<div class="star-background" style="clip-path: polygon(0 0, 13% 0, 17% 100%, 0 100%);"> <!-- Conteneur pour le fond étoilé avec coupure diagonale -->
+  <div id="planet-foreground" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; clip-path: polygon(0 0, 13% 0, 17% 100%, 0 100%);">
+  </div>
   {% block extra_js %}
 <script src="{% static 'js/mars.js' %}"></script>a
 
 {% endblock %}
 
   </div>
+    <div class="white-diagonal-bg"></div>
     <h2>Bienvenue sur mon projet personnel</h2>
 <div class="info-box initial" id="infoBox">
     <h3>Objectifs de ce site</h3>

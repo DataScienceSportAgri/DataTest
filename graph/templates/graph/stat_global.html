@@ -47,4 +47,30 @@
     <script src="{% static 'js/statGlobal.js' %}"></script>
         </div>
     </div>
+    <div>
+<p>
+    La performance proche entre le 10 km et le semi-marathon nous montre que la décélération de vitesse est probablement moindre entre l'ensemble
+    des coureurs ayant participé au 10 km et au semi-marathon que celle existant entre
+    des performances pour des coureurs équivalents. Les scores de performance étant basé sur la médiane des participants de la course a pu donc sous évalué
+    les performances pour les coureurs ayant participé a des distances longues et sur évalué les performances pour des distances plus courtes à cause d'une compétitivité
+    différente au départ de ces courses. Pour améliorer les scores des performances
+    <a href="{% url 'graph:score_distribution' %}">voir ici la feature montrant le comportement des scores de performances</a>
+    nous aurions pu à partir de la littérature sur la baisse de performance en fonction de la distance et de la catégorie comprendre et ajuster, l'augmentation du niveau moyen des coureurs participants à des distances plus longues.
+</p>
+    <p>
+        Toutefois l'originalité de notre approche a été d'utiliser des résultats d'événements grand public peu étudiés par la littérature
+        et les changements de vitesses entre les distances sont probablement différent (sous estimé) par rapport aux coureurs élites
+        qui gérent mieux leur effort durant la course et minimisent les phénomènes de baisse de vitesse dû à l'augmentation de la distance comparé à
+        des coureurs non professionnels qui sont entrainés moins spécifiquement pour ces distances que les coureurs élites.
+    </p>
+    <p>
+        Une dernière possibilité d'amélioration des scores de performances aurait donc été d'utiliser les coureurs regroupés de manière hypothétique comme étant une seule et même personne, et
+        d'analyser leur baisse de vitesse avec l'augmentation de la distance, en moyenne et d'utiliser la régression de cette baisse de vitesse
+        selon la distance pour chaque catégorie comme base de normalisation. Cette base permettrait ainsi d'éviter le biais de séléction des coureurs au départ d'un événement en fonction
+        de la distance et la sous-évaluation pour les grandes distances de la performance (et sur-évaluation pour les petites distances de la performance) qui en résulte.
+    </p><p>
+        Le score global, prenant en compte le temps de course peut avoir tendance à minimiser cette erreur. Toutefois, une normalisation par catégorie de la performance
+        peut être intéressante et sera peut-être étudié plus tard.
+    </p>
+    </div>
 {% endblock %}

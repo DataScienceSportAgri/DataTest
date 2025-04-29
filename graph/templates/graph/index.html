@@ -3,6 +3,7 @@
 {% load static %}
 
 {% block content %}
+    <div class="page-content" style="margin: 20px;">
 <h2>Liste des courses</h2>
 <div class="button-container">
     <a href="{% url 'graph:vitesse_distribution' %}" id="btn-primary">Voir la distribution des vitesses</a>
@@ -60,4 +61,5 @@
 {% else %}
     <p>Aucune course n'est disponible.</p>
 {% endif %}
+    </div>
 {% endblock %}

@@ -12,7 +12,14 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <h2>Distribution et évolution des scores</h2>
 
-
+<p>
+Le score de vitesse est établi avec deux sous-score. Chaque sous-score vaut pour 50 % de la note. Le premier sous score est fait en utilisant la vitesse de la performance considérée et en la normalisant sur la moyenne des vitesses pour des coureurs
+    de la même catégorie (simplifiée (tranche d'âge plus large)) sur l'ensemble des courses correspondant à la course considérée pour
+des tranches de distances de 0 à 7,5 km, 7,5 km à 15 km, 15 km à 25 km, 25 km à 45 km et plus de 45 km. Le second sous-score correspond à la vitesse de la performance cette fois-ci normalisée avec la médiane de vitesses des performances pour catégorie (non simplifiée cette fois-ci) du coureur. S'il y'avait moins de 6 personnes dans la catégorie la médiane pour le sexe a été utilisée.
+Un paramètre enfin de type de course et du nombre de participants tentent de légèrement influencent ce dernier sous score en fonction de la compétitivité potentiellement plus accrue ou moins accrue selon les courses (cross avec beaucoup de monde compétitivité accrue, tandis-ce que des foulées avec un nombre moyen de personne semble être une épreuve peu compétitive).
+</p>
+    <p>Le score de performance est établi avec 80 % de normalisation par rapport à la vitesse médiane de la catégorie et 20 % avec la vitesse au carré divisé par le temps de course réalisée (normalisé à 3h). Ce score permet de
+    mettre en valeur les prouesses sportives sur les grandes distances.</p>
             <h3>Evolution des scores de tous les coureurs</h3>
 
             <div class="controls">
@@ -52,8 +59,8 @@
                     <!-- Cohorte -->
                     <div class="radio-group">
                         <h4>Population :</h4>
-                        <label><input type="radio" name="cohortType" value="tous" checked> Tous les coureurs</label>
-                        <label><input type="radio" name="cohortType" value="viables"> Coureurs identiques</label>
+                        <label><input type="radio" name="cohortType" value="tous" checked> Performances uniques</label>
+                        <label><input type="radio" name="cohortType" value="viables"> Séries Temporelles de Coureurs identifiés identiques</label>
                     </div>
                 </form>
             </div>
