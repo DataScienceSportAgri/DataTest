@@ -1,3 +1,10 @@
+// Vitesses de rotation par défaut
+let rotationY = -0.002;
+let rotationX = -0.0001;
+let rotationZ = 0.00015;
+let model = null; // Pour y accéder globalement
+
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -29,34 +36,24 @@ camera.lookAt(0, 0, 0);
 // Chargement du modèle
 const loader = new THREE.GLTFLoader();
 loader.load('/static/models/mars.glb', function(gltf) {
-    const model = gltf.scene;
+    model = gltf.scene;
     scene.add(model);
-
-    // Centrer le modèle
     model.position.set(0, 0, 0);
-
-    // Positionner la caméra
     camera.position.set(4, 2, 4);
     camera.lookAt(model.position);
 
-        // Animation
     function animate() {
         requestAnimationFrame(animate);
 
-        // Rotation plus fluide
-        model.rotation.y -= 0.002;
+        // Utilise les variables globales
+        model.rotation.y += rotationY;
+        model.rotation.x += rotationX;
+        model.rotation.z += rotationZ;
 
-        model.rotation.x -= 0.0001;
-        model.rotation.z -= -0.00015;
-
-
-        // Ajout d'un effet de pénombre
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
         renderer.render(scene, camera);
     }
-
     animate();
 }, undefined, function(error) {
     console.error(error);

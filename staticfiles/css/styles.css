@@ -34,8 +34,11 @@
 .course-item:hover {
     background-color: #e0e0e0;
 }
+.button-container {
+    display: flex;
+}
 
-.btn-primary {
+#btn-primary {
     display: inline-block;
     padding: 10px 15px;
     background-color: #007bff;
@@ -45,8 +48,39 @@
     margin-bottom: 10px;
 }
 
-.btn-primary:hover {
+#btn-primary:hover {
     background-color: #0056b3;
+}
+/* Style pour le second bouton (rouge clair) */
+#btn-secondary {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #ff6f61; /* Rouge clair */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    margin-left:25px;
+}
+
+#btn-secondary:hover {
+    background-color: #cc564d; /* Rouge plus foncé au survol */
+}
+
+/* Style pour le troisième bouton (violet clair) */
+#btn-tertiary {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #9b59b6; /* Violet clair */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    margin-left: 25px; /* Même marge que le secondary */
+}
+
+#btn-tertiary:hover {
+    background-color: #7d3c98; /* Violet plus foncé au survol */
 }
 
 .orange-row {
@@ -308,8 +342,104 @@ td:first-child {
     }
 }
 
+.controls {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.controls label {
+    margin-right: 20px;
+    cursor: pointer;
+}
 
 
 
+.graph-wrapper {
+    display: flex;
+    justify-content: space-between; /* Espace entre les deux zones */
+    gap: 25px; /* Espacement entre les deux divs */
+}
 
+.graph-left {
+    flex: 0 0 47.5%; /* 5% plus petit que 50% */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.graph-right {
+    flex: 0 0 52.5%; /* 5% plus grand que le gauche */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+@media (max-width: 768px) {
+    .graph-wrapper {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .graph-left,
+    .graph-right {
+        width: 100%;
+        flex: none; /* Réinitialisation de flex sur petits écrans */
+    }
+}
+.radio-group {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.radio-group h4 {
+    margin-top: 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.radio-group label {
+    display: block;
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 8px;
+}
+
+
+
+.tooltip {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  padding: 12px;
+  font-family: Arial, sans-serif;
+}
+
+.tooltip strong {
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.tooltip span {
+  color: #666;
+  display: block;
+  line-height: 1.4;
+}
+
+body {
+    margin-left: 20px;
+    margin-right: 20px;
+}
 
