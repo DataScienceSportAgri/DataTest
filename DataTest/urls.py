@@ -27,6 +27,8 @@ urlpatterns = [
 # Configuration requise pour django-plotly-dash
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
     path('', views.home, name='home'),
+
+    path('scholar_and_cv/', views.scholar_and_cv, name='scholar_and_cv'),
     path('polls/', include('polls.urls')),
     path('agri/', include('agri.urls')),
     path('admin/', admin.site.urls),

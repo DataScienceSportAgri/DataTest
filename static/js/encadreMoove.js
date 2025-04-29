@@ -47,6 +47,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
     });
+        // Ajout de l'événement 'click'
+    infoBox.addEventListener("click", function () {
+        if (!isCentered && !isLocked) {
+            window.location.href = "{% url 'scholar_and_cv' %}";
+        }
+    });
 });
 
 function slowDownMarsRotation() {

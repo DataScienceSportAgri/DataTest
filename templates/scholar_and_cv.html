@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+        <link rel="stylesheet" href="{% static 'css/home_style.css' %}">
+<div class="cv-section">
+    <h2>Mon CV et Parcours</h2>
+    <div class="cv-buttons">
+        <a class="cv-btn" href="{% static 'scholarcv/CV Xavier Martin.pdf' %}" target="_blank">
+            📄 Voir mon CV (PDF)
+        </a>
+        <a class="cv-btn" href="{% static 'scholarcv/Machine Learning.pdf' %}" target="_blank">
+            Travail Machine Learning
+        </a>
+        <a class="cv-btn" href="{% static 'scholarcv/rapportxaviermartin.pdf' %}" target="_blank">
+            Rapport Cinétiques
+        </a>
+        <a class="cv-btn" href="{% static 'scholarcv/Image Processing Analysis Project.pdf' %}" target="_blank">
+            Image Processing Analysis
+        </a>
+        <!-- Ajoutez d'autres liens -->
+    </div>
+</div>
+{% endblock %}

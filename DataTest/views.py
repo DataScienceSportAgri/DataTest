@@ -10,3 +10,6 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
 
+def scholar_and_cv(request):
+    return render(request, 'scholar_and_cv.html')
+

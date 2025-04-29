@@ -944,3 +944,34 @@ background:
   bottom: 20%;
   right: 40%;
 }
+
+.cv-section {
+    background: linear-gradient(120deg, #f8fafc 0%, #e0e7ef 100%);
+    padding: 40px 0;
+    min-height: 80vh;
+    text-align: center;
+}
+
+.cv-buttons {
+    margin-top: 30px;
+}
+
+.cv-btn {
+    display: inline-block;
+    margin: 10px 20px;
+    padding: 18px 36px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 32px;
+    text-decoration: none;
+    font-size: 1.2em;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+    transition: background 0.2s, transform 0.2s;
+}
+
+.cv-btn:hover {
+    background: #1e40af;
+    transform: translateY(-2px) scale(1.04);
+}
+
