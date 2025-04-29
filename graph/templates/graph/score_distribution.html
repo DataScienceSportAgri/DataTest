@@ -13,12 +13,12 @@
     <h2>Distribution et évolution des scores</h2>
 
 <p>
-Le score de vitesse est établi avec deux sous-score. Chaque sous-score vaut pour 50 % de la note. Le premier sous score est fait en utilisant la vitesse de la performance considérée et en la normalisant sur la moyenne des vitesses pour des coureurs
-    de la même catégorie (simplifiée (tranche d'âge plus large)) sur l'ensemble des courses correspondant à la course considérée pour
-des tranches de distances de 0 à 7,5 km, 7,5 km à 15 km, 15 km à 25 km, 25 km à 45 km et plus de 45 km. Le second sous-score correspond à la vitesse de la performance cette fois-ci normalisée avec la médiane de vitesses des performances pour catégorie (non simplifiée cette fois-ci) du coureur. S'il y'avait moins de 6 personnes dans la catégorie la médiane pour le sexe a été utilisée.
-Un paramètre enfin de type de course et du nombre de participants tentent de légèrement influencent ce dernier sous score en fonction de la compétitivité potentiellement plus accrue ou moins accrue selon les courses (cross avec beaucoup de monde compétitivité accrue, tandis-ce que des foulées avec un nombre moyen de personne semble être une épreuve peu compétitive).
+Le score de vitesse est établi avec deux sous-scores. Chaque sous-score vaut pour 50 % de la note. Le premier sous score est fait en utilisant la vitesse de la performance considérée et en la normalisant sur la moyenne des vitesses pour des coureurs
+    de la même catégorie (simplifiée (tranche d'âge plus large)) sur l'ensemble des courses correspondant en distance à la course considérée pour
+des tranches de distances de 0 à 7,5 km, 7,5 km à 15 km, 15 km à 25 km, 25 km à 45 km et plus de 45 km. Le second sous-score correspond à la vitesse de la performance cette fois-ci normalisée avec la médiane de vitesses des performances pour catégorie (non simplifiée cette fois-ci) du coureur pour la course ou a eu lieu la performance. S'il y avait moins de six personnes dans la catégorie la médiane pour le sexe a été utilisée.
+Un paramètre enfin de type de course et du nombre de participants tente de légèrement influencer ce dernier sous score en fonction de la compétitivité potentiellement plus accrue ou moins accrue selon les courses (cross avec beaucoup de monde compétitivité accrue, tandis-ce que des foulées avec un nombre moyen de personnes semblent être des épreuves peu compétitives).
 </p>
-    <p>Le score de performance est établi avec 80 % de normalisation par rapport à la vitesse médiane de la catégorie et 20 % avec la vitesse au carré divisé par le temps de course réalisée (normalisé à 3h). Ce score permet de
+    <p>Le score de performance est établi avec 80 % de normalisation par rapport à la vitesse médiane de la catégorie et 20 % avec la vitesse de la performance divisé par la médiane de la course pour la catégorie considérée au carré divisé par le temps de course réalisée (normalisé à 3h). Ce score permet de
     mettre en valeur les prouesses sportives sur les grandes distances.</p>
             <h3>Evolution des scores de tous les coureurs</h3>
 
@@ -61,6 +61,14 @@ Un paramètre enfin de type de course et du nombre de participants tentent de l�
                         <h4>Population :</h4>
                         <label><input type="radio" name="cohortType" value="tous" checked> Performances uniques</label>
                         <label><input type="radio" name="cohortType" value="viables"> Séries Temporelles de Coureurs identifiés identiques</label>
+                    </div>
+                    <div>
+                        <p>
+                            Environ 3000 coureurs uniques ont été détectés parmi les 300000 performances sportives récupérées, ils correspondent à des performances de personnes
+                            ayant le même nom et prénom et dont l'évolution des catégories en fonction des années est plausibles. Lors de la fusion de ces performances pour un même coureur
+                            un score de viabilité a été établi en fonction de l'occurrence du nom et du prénom dans les performance et la vitesse en fonction de la distance pour les différentes
+                            performances appartenant à un même coureur.
+                        </p>
                     </div>
                 </form>
             </div>
