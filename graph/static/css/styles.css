@@ -289,7 +289,7 @@ td:first-child {
     position: relative;
     width: 100%;
     clear: both;
-    margin-top: 30px;
+    margin-top: 300px;
     margin-bottom: 40px;
 }
 
@@ -443,3 +443,17 @@ body {
     margin-right: 20px;
 }
 
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+#statistics-container {
+  margin-bottom: 50px; /* Espace en dessous des stats */
+  border-bottom: 1px solid #eee; /* Ligne de séparation optionnelle */
+  padding-bottom: 20px;
+}
+
+.texte {
+  margin-top: 520px; /* Espace avant ton texte */
+}

@@ -303,11 +303,11 @@ document.getElementById('submit-filter').addEventListener('click', function() {
   });
 });
 </script>
-
+<div class="container">
     <div id="global" style="width: 100%; height: 620px;">
     {% include 'graph/partial_vitesse_distribution.html' %}
 </div>
-    <div>
+    <div class="texte">
     <h4>
         Hypothèse de la plus grande variance masculine
     </h4>
@@ -329,9 +329,9 @@ Plusieurs interprétations scientifiques ont été avancées pour expliquer ce c
             plus efficacement les partenaires en fonction des caractéristiques exprimées.
     </p>
     <p>
-        Au delà de la variance, vous pouvez faire augmenter la distance et vous rendre compte que la différence de vitesse
+        Au-delà de la variance, vous pouvez faire augmenter la distance et vous rendre compte que la différence de vitesse
         moyenne entre les hommes et les femmes diminue. Ceci est particuliérement bien expliqué dans ce blog     <a href="https://courir-mieux.fr/meilleure-endurance-femme-homme/" target="_blank" rel="noopener noreferrer">cet article sur l'endurance comparée hommes-femmes</a>.
     </p>
     </div>
-
+</div>
 {% endblock %}
