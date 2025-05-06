@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.http import JsonResponse
 import json
 
-from polls.views import DetailView
+
 from .models import ClassementBubble, Bubble, ColorPreset
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import CreateView

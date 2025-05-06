@@ -87,6 +87,7 @@ window.isRefreshing = false;
   <div id="slider-values">5 km - 10 km</div>
   <button id="submit-filter">Appliquer le filtre</button>
 </div>
+
 <script>
 function resetContainer() {
   const container = document.getElementById('chart-container');
@@ -306,6 +307,31 @@ document.getElementById('submit-filter').addEventListener('click', function() {
     <div id="global" style="width: 100%; height: 620px;">
     {% include 'graph/partial_vitesse_distribution.html' %}
 </div>
-
+    <div>
+    <h4>
+        Hypothèse de la plus grande variance masculine
+    </h4>
+    <p>
+Les études scientifiques portant sur les différences entre hommes et femmes mettent en évidence, dans la littérature académique,
+        une variabilité phénotypique généralement plus importante chez les hommes que chez les femmes, que ce soit pour
+        les caractéristiques physiques, physiologiques, psychiques ou comportementales. Bien que des différences notables
+        existent au sein de chaque groupe, il apparaît que la dispersion des caractéristiques est, de façon systématique,
+        moins marquée parmi les femmes que parmi les hommes.
+    </p>
+        <p>
+Plusieurs interprétations scientifiques ont été avancées pour expliquer ce constat, notamment d’ordre évolutionniste. Chez
+            les mammifères, les mâles jouent principalement le rôle d’agents de sélection, leur nombre étant moins déterminant
+            pour la reproduction que celui des femelles. Par ailleurs, la constitution génétique masculine (hétérogamétie XY)
+            limite les mécanismes de compensation de l’expression des gènes, contrairement aux femmes (homogamétiques XX),
+            qui bénéficient d’une redondance génétique. Cette particularité génétique expose davantage les hommes à l’expression
+            de certains gènes, ce qui accroît à la fois le risque de maladies génétiques et la variabilité des phénotypes
+            observés. Ce phénomène favorise ainsi une sélection naturelle plus marquée, permettant aux femelles de sélectionner
+            plus efficacement les partenaires en fonction des caractéristiques exprimées.
+    </p>
+    <p>
+        Au delà de la variance, vous pouvez faire augmenter la distance et vous rendre compte que la différence de vitesse
+        moyenne entre les hommes et les femmes diminue. Ceci est particuliérement bien expliqué dans ce blog     <a href="https://courir-mieux.fr/meilleure-endurance-femme-homme/" target="_blank" rel="noopener noreferrer">cet article sur l'endurance comparée hommes-femmes</a>.
+    </p>
+    </div>
 
 {% endblock %}
